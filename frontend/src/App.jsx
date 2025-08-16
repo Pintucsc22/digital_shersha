@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 
 // ✅ Import the StudentDashboard component
-// import StudentDashboard from './pages/StudentDashboard';
+import StudentDashboard from './pages/StudentDashboard';
 
 
  import TeacherDashboard from './pages/TeacherDashboard';
@@ -27,7 +27,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
 
         {/* ✅ When the URL is "/student-dashboard", render the StudentDashboard component */}
-        {/* <Route path="/student-dashboard" element={<StudentDashboard />} /> */}
+        <Route path="/student-dashboard" element={<StudentDashboard />} />
 
         
         <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
