@@ -1,34 +1,51 @@
-# Node.js
-node_modules/
+# ──────────────
+# Logs
+# ──────────────
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-package-lock.json
+lerna-debug.log*
 
-# Vite / React
+# ──────────────
+# Node modules (frontend + backend)
+# ──────────────
+node_modules/
+
+# ──────────────
+# Build outputs (frontend Vite + backend dist if built)
+# ──────────────
 dist/
-*.local
+dist-ssr/
+build/
 
-# Tailwind
-*.css.map
-
-# Logs
-logs
-*.log
-logs/*.log
-
-# dotenv environment files
+# ──────────────
+# Environment files (never commit secrets!)
+# ──────────────
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# IDE / Editor
-.vscode/
-.idea/
+# ──────────────
+# OS / Editor files
+# ──────────────
 .DS_Store
+Thumbs.db
 
-# Backend specific
-/backend/uploads/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ──────────────
+# Misc
+# ──────────────
+*.local

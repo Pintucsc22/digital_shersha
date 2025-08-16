@@ -1,63 +1,55 @@
 
-# Digital\_Shersha
+# 📘 Digital Shersha
 
-**Tagline:** *Be the Best, Be Digital\_Shersha.*
-
-Digital\_Shersha is a digital exam platform built with **React (frontend)** and **Node.js + Express + MongoDB (backend)**.
-
----
-
-## 🚀 Tech Stack
-
-* **Frontend:** React, Tailwind CSS, Axios, React Router
-* **Backend:** Node.js, Express.js, MongoDB (Mongoose), JWT, Bcrypt
-* **Other Tools:** dotenv, nodemon, Git
+**Bangla digital exam platform (up to class 10)**
+Frontend: React + Vite + TailwindCSS
+Backend: Node.js + Express + MongoDB
 
 ---
 
-## 📂 Project Structure
+## ⚡ Features
 
-```
-Digital_Shersha/
-│
-├── backend/   # Node.js + Express + MongoDB
-└── frontend/  # React + Tailwind CSS
-```
+* Student and Teacher accounts
+* Online quizzes/exams in Bengali
+* Secure authentication with JWT
+* MongoDB for storing users, exams, results
+* TailwindCSS for modern UI
 
 ---
 
-## ⚙️ Installation
+## 🛠️ Project Setup
 
-### 1️⃣ Clone the repository
+### 1. Clone Repository
 
 ```bash
-git clone https://github.com/your-username/digital_shersha.git
+git clone <your_repo_url>
 cd digital_shersha
 ```
 
 ---
 
-### 2️⃣ Backend Setup
+### 2. Frontend Setup (React + Vite 5 + Tailwind)
 
 ```bash
-cd backend
-npm install
+cd frontend
 ```
 
-**Dependencies Installed:**
+**Dependencies:**
 
-* express
-* cors
-* dotenv
-* mongoose
-* bcrypt
-* jsonwebtoken
+* `react` / `react-dom`
+* `vite@5.x`
+* `@vitejs/plugin-react@4.x`
+* `tailwindcss` / `postcss` / `autoprefixer`
 
-**Dev Dependency:**
+**Install:**
 
-* nodemon
+```bash
+npm install
+npm install -D vite@5.4.8 @vitejs/plugin-react@4.3.1 tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+```
 
-To run the backend:
+**Run dev server (default: [http://localhost:5173](http://localhost:5173)):**
 
 ```bash
 npm run dev
@@ -65,42 +57,67 @@ npm run dev
 
 ---
 
-### 3️⃣ Frontend Setup
+### 3. Backend Setup (Node + Express + MongoDB)
 
 ```bash
-cd ../frontend
-npm install
+cd backend
 ```
 
-**Dependencies Installed:**
+**Dependencies:**
 
-* react
-* react-dom
-* react-router-dom
-* axios
-* tailwindcss (with postcss + autoprefixer)
+* `express` → server
+* `mongoose` → MongoDB
+* `bcrypt` → password hashing
+* `jsonwebtoken` → authentication
 
-To run the frontend:
+**Install:**
 
 ```bash
-npm start
+npm install express mongoose bcrypt jsonwebtoken dotenv cors
+npm install -D nodemon
+```
+
+**Run backend server (default: [http://localhost:5000](http://localhost:5000)):**
+
+```bash
+npm run dev
 ```
 
 ---
 
-### 4️⃣ Environment Variables
-
-Create a `.env` file in **backend/** folder:
+## 📂 Project Structure
 
 ```
-PORT=5000
-MONGO_URI=your_mongodb_url_here
-JWT_SECRET=your_secret_key
+digital_shersha/
+│── frontend/   # React + Vite + Tailwind
+│── backend/    # Node.js + Express + MongoDB
+│── README.md
+│── .gitignore
 ```
 
 ---
 
-✅ Now you can run **backend on port 5000** and **frontend on port 3000**.
+## 🚀 Scripts
+
+### Frontend
+
+```bash
+npm run dev      # start frontend on localhost:5173
+npm run build    # build production files
+```
+
+### Backend
+
+```bash
+npm run dev      # start backend with nodemon (localhost:5000)
+```
 
 ---
 
+## ✅ Requirements
+
+* Node.js **18+**
+* npm **9+**
+* MongoDB (local)
+
+---
