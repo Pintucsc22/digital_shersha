@@ -17,7 +17,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
-//app.use('/api/teacher/exams', require('./routes/teacherExamRoutes')); // ✅ Teacher exams
+app.use('/api/teacher/exams', require('./routes/teacherExamRoutes')); // ✅ Teacher exams
 //app.use('/api/results', require('./routes/resultRoutes'));
 app.use('/api/email', require('./routes/emailRoutes'));
 
@@ -25,7 +25,7 @@ app.use('/api/email', require('./routes/emailRoutes'));
 //app.use('/api/teacher/questions', require('./routes/teacherQuestionsRoutes'));
 //mcqRoutes
 //app. use("/api/mcq", mcqRoutes);
-// app.use('/api/teacherQuestions', require('./routes/teacherQuestionsRoutes'));
+app.use('/api/teacherQuestions', require('./routes/teacherQuestionsRoutes'));
 // app.use('/api/', require('./routes/studentUserRoutes'));
 // app.use('/api/student/exam', studentExamRoutes);
 // app.use('/api/student', studentRoutes);

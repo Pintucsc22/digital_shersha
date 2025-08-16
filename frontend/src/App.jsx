@@ -36,12 +36,12 @@ const App = () => {
 
         
         <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
-        {/* <Route path="/teacher" element={<TeacherDashboard />} /> */}
+        <Route path="/teacher" element={<TeacherDashboard />} />
 
         {/* ✅ When the URL is "/exam/:id", render the ExamPage component with the dynamic "id" */}
          {/* <Route path="/student/exam/:examId" element={<StudentExamPage />} />  */}
-        {/* <Route path="/manage-questions/:examId" element={<QuestionManager />} />
-        <Route path="/student/exam/:examId" element={<TakeExam />} /> */}
+        {/* <Route path="/manage-questions/:examId" element={<QuestionManager />} /> */}
+        {/* <Route path="/student/exam/:examId" element={<TakeExam />} />  */}
         {/* <Route path="/teacher/exam/:id/mcqs" element={<MCQPage />} /> */}
       </Routes>
     </BrowserRouter>
