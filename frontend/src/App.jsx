@@ -12,8 +12,8 @@ import Home from './pages/Home';
 // ✅ Import the StudentDashboard component
 // import StudentDashboard from './pages/StudentDashboard';
 
-// ✅ Import the TeacherDashboard component
-// import TeacherDashboard from './pages/TeacherDashboard';
+
+ import TeacherDashboard from './pages/TeacherDashboard';
 
 // ✅ Import the ExamPage component for dynamic routing (e.g. /exam/123)
 //import ExamPage from './pages/ExamPage';
@@ -34,8 +34,8 @@ const App = () => {
         {/* ✅ When the URL is "/student-dashboard", render the StudentDashboard component */}
         {/* <Route path="/student-dashboard" element={<StudentDashboard />} /> */}
 
-        {/* ✅ When the URL is "/teacher-dashboard", render the TeacherDashboard component */}
-        {/* <Route path="/teacher-dashboard" element={<TeacherDashboard />} /> */}
+        
+        <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
         {/* <Route path="/teacher" element={<TeacherDashboard />} /> */}
 
         {/* ✅ When the URL is "/exam/:id", render the ExamPage component with the dynamic "id" */}
