@@ -1,15 +1,9 @@
 
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-
-
 import Home from './pages/Home';
-
-// ✅ Import the StudentDashboard component
 import StudentDashboard from './pages/StudentDashboard';
-
-
- import TeacherDashboard from './pages/TeacherDashboard';
+import TeacherDashboard from './pages/TeacherDashboard';
 
 // import ExamPage from './pages/ExamPage';
 import QuestionManager from './components/McqQuestionManager';
@@ -19,17 +13,12 @@ import MCQPage from './pages/MCQpage';
 // ✅ Define the main App component
 const App = () => {
   return (
-    // ✅ Wrap the entire app in BrowserRouter to enable routing
+    
     <BrowserRouter>
       {/* ✅ Use Routes to define different pages/components for URLs */}
       <Routes>
-        {/* ✅ When the URL is "/", render the Home component */}
         <Route path="/" element={<Home />} />
-
-        {/* ✅ When the URL is "/student-dashboard", render the StudentDashboard component */}
-        <Route path="/student-dashboard" element={<StudentDashboard />} />
-
-        
+        <Route path="/student-dashboard" element={<StudentDashboard />} />        
         <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
         <Route path="/teacher" element={<TeacherDashboard />} />
 

@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const mcqRoutes = require("./routes/mcqRoutes");
 //const studentRoutes =require('./routes/studentRoutes');
-//const studentExamRoutes =require('./routes/studentExamRoutes')
+const studentExamRoutes =require('./routes/studentExamRoutes')
 
 dotenv.config();
 connectDB();
@@ -26,8 +26,8 @@ app.use('/api/email', require('./routes/emailRoutes'));
 //mcqRoutes
 app. use("/api/mcq", mcqRoutes);
 app.use('/api/teacherQuestions', require('./routes/teacherQuestionsRoutes'));
-// app.use('/api/', require('./routes/studentUserRoutes'));
-// app.use('/api/student/exam', studentExamRoutes);
+app.use('/api/', require('./routes/studentUserRoutes'));
+app.use('/api/student/exam', studentExamRoutes);
 // app.use('/api/student', studentRoutes);
 
 // Student-specific question fetching (no correct answers)
