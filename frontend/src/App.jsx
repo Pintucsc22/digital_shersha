@@ -1,12 +1,8 @@
-// ✅ Import the React library to use JSX and build components
+
 import React from 'react';
-
-
-
-// ✅ Import routing components from react-router-dom for page navigation
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-// ✅ Import the Home page component
+
 import Home from './pages/Home';
 
 // ✅ Import the StudentDashboard component
@@ -15,10 +11,9 @@ import Home from './pages/Home';
 
  import TeacherDashboard from './pages/TeacherDashboard';
 
-// ✅ Import the ExamPage component for dynamic routing (e.g. /exam/123)
-//import ExamPage from './pages/ExamPage';
-//import QuestionManager from './components/QuestionManager';
-// import MCQPage from './pages/MCQpage';
+// import ExamPage from './pages/ExamPage';
+import QuestionManager from './components/McqQuestionManager';
+import MCQPage from './pages/MCQpage';
 // import StudentExamPage from './pages/student/StudentExamPage';
 
 // ✅ Define the main App component
@@ -40,9 +35,9 @@ const App = () => {
 
         {/* ✅ When the URL is "/exam/:id", render the ExamPage component with the dynamic "id" */}
          {/* <Route path="/student/exam/:examId" element={<StudentExamPage />} />  */}
-        {/* <Route path="/manage-questions/:examId" element={<QuestionManager />} /> */}
+        <Route path="/manage-questions/:examId" element={<QuestionManager />} />
         {/* <Route path="/student/exam/:examId" element={<TakeExam />} />  */}
-        {/* <Route path="/teacher/exam/:id/mcqs" element={<MCQPage />} /> */}
+        <Route path="/teacher/exam/:id/mcqs" element={<MCQPage />} />
       </Routes>
     </BrowserRouter>
   );
