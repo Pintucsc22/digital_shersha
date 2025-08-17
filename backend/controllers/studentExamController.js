@@ -68,7 +68,8 @@ exports.submitExam = async (req, res) => {
       exam: exam._id,
       answers,
       score,
-      total: exam.questions.length
+      total: exam.questions.length,
+      status: "submitted"
     });
 
     // Mark exam as submitted in `assignedTo`
@@ -80,6 +81,28 @@ exports.submitExam = async (req, res) => {
     res.json({ message: 'Exam submitted successfully', score });
   } catch (err) {
     console.error('[ERROR] submitExam:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// =======================
+// Get student results (ONLY published)
+// =======================
+exports.getStudentResults = async (req, res) => {
+  try {
+    const student = await User.findOne({ userId: req.user.userId, role: 'student' });
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+
+    const results = await StudentExam.find({
+      student: student._id,
+      isPublished: true // ✅ only published results
+    })
+      .populate("exam", "examName subject questions")
+      .sort({ submittedAt: -1 });
+
+    res.json(results);
+  } catch (err) {
+    console.error('[ERROR] getStudentResults:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

@@ -3,11 +3,13 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import StudentDashboard from './pages/StudentDashboard';
+import TeacherExamControlSubmission from './pages/TeacherExamControlSubmission';
 import TeacherDashboard from './pages/TeacherDashboard';
 import QuestionManager from './components/McqQuestionManager';
 import MCQPage from './pages/MCQpage';
-// import TakeExam from './pages/TakeExam'; //last import
+
 import StudentExamPage from './pages/student/StudentExamPage';
+
 
 // ✅ Define the main App component
 const App = () => {
@@ -20,10 +22,12 @@ const App = () => {
         <Route path="/student-dashboard" element={<StudentDashboard />} />        
         <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
         <Route path="/teacher" element={<TeacherDashboard />} />
+        <Route path="/teacher/exam/:id/submissions" element={<TeacherExamControlSubmission />} />
 
         {/* ✅ When the URL is "/exam/:id", render the ExamPage component with the dynamic "id" */}
         {/* //last import */}
-         <Route path="/student/exam/:examId" element={<StudentExamPage />} /> 
+         <Route path="/student/exam/:examId" element={<StudentExamPage />} />
+        
 
 
         <Route path="/manage-questions/:examId" element={<QuestionManager />} />

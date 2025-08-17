@@ -1,14 +1,9 @@
 const express = require('express');
-const authenticate = require('../middleware/authMiddleware');
-const {
-  getAvailableExams,
-  getStudentResults,
-} = require('../controllers/studentController');
-
 const router = express.Router();
+const { getAvailableExams, getStudentResults } = require('../controllers/studentController');
+const auth = require('../middleware/authMiddleware');
 
-// Overview routes
-router.get('/exams', authenticate, getAvailableExams);
-router.get('/results', authenticate, getStudentResults);
+router.get('/exams', auth, getAvailableExams); // ✅ must be a function
+router.get('/results', auth, getStudentResults); // ✅ must be a function
 
 module.exports = router;

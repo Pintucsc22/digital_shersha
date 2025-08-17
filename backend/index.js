@@ -28,7 +28,9 @@ app. use("/api/mcq", mcqRoutes);
 app.use('/api/teacherQuestions', require('./routes/teacherQuestionsRoutes'));
 app.use('/api/', require('./routes/studentUserRoutes'));
 app.use('/api/student/exam', studentExamRoutes);
-app.use('/api/student', studentRoutes); //last import
+app.use('/api/student', studentRoutes);
+app.use("/api/student/results", require("./routes/studentResultRoutes"));
+
 
 // Student-specific question fetching (no correct answers)
 // app.use('/api/student/questions', require('./routes/studentQuestionsRoutes'));

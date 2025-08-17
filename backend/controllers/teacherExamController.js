@@ -1,32 +1,29 @@
 const Exam = require('../models/Exam');
 const User = require('../models/userModel');
+const StudentExam = require('../models/StudentExam');
 
 // 📌 Create exam - only for teachers
 const createExam = async (req, res) => {
   try {
-    // Ensure only teachers can create an exam
     if (req.user.role !== 'teacher') {
       return res.status(403).json({ message: 'Only teachers can create exams' });
     }
-    //validate required fields
+
     const { examName, className, topic, date, duration } = req.body;
     if (!examName || !className || !topic || !date || !duration) {
       return res.status(400).json({ message: 'All fields are required' });
     }
-    // Finds the teacher in DB, returns 404 if not found
+
     const teacherUser = await User.findOne({ userId: req.user.userId });
     if (!teacherUser) return res.status(404).json({ message: 'Teacher not found' });
 
-    console.log("Incoming request body:", req.body);
-    console.log("Teacher from DB:", teacherUser);
-    // create a new exam
     const exam = await Exam.create({
       examName,
       className,
       topic,
       date: new Date(date),
       duration,
-      teacher: teacherUser._id
+      teacher: teacherUser._id,
     });
 
     res.status(201).json(exam);
@@ -36,18 +33,16 @@ const createExam = async (req, res) => {
   }
 };
 
-// 📌 Update exam - only by teacher who owns it
+// 📌 Update exam
 const updateExam = async (req, res) => {
   try {
     const { examName, className, topic, date, duration } = req.body;
-    //Fetches exam by ID, return 404 if not found
+
     const exam = await Exam.findById(req.params.id);
     if (!exam) return res.status(404).json({ message: "Exam not found" });
-    //Verifies teacher exists
+
     const teacherUser = await User.findOne({ userId: req.user.userId });
-    if (!teacherUser) return res.status(403).json({ message: "Not Authorized" });
-    // Checks if the logged in teacher owns this exam
-    if (exam.teacher.toString() !== teacherUser._id.toString()) {
+    if (!teacherUser || exam.teacher.toString() !== teacherUser._id.toString()) {
       return res.status(403).json({ message: "Not Authorized" });
     }
 
@@ -68,14 +63,13 @@ const updateExam = async (req, res) => {
 // 📌 Get all exams for logged-in teacher
 const getExamsByTeacher = async (req, res) => {
   try {
-    //Ensures only teachers can view their exams
     if (req.user.role !== 'teacher') {
       return res.status(403).json({ message: 'Only teachers can view their exams' });
     }
-    // finds teacher in db
+
     const teacherUser = await User.findOne({ userId: req.user.userId });
     if (!teacherUser) return res.status(404).json({ message: 'Teacher not found' });
-    //Returns all exams owned by this teacher
+
     const exams = await Exam.find({ teacher: teacherUser._id });
     res.json(exams);
   } catch (err) {
@@ -84,17 +78,16 @@ const getExamsByTeacher = async (req, res) => {
   }
 };
 
-// 📌 Delete exam - only by teacher who owns it
+// 📌 Delete exam
 const deleteExam = async (req, res) => {
   try {
-
     if (req.user.role !== 'teacher') {
       return res.status(403).json({ message: 'Only teachers can delete exams' });
     }
 
     const exam = await Exam.findById(req.params.id);
     if (!exam) return res.status(404).json({ message: 'Exam not found' });
-    // Only teacher who owns the exam can delete
+
     const teacherUser = await User.findOne({ userId: req.user.userId });
     if (!teacherUser || exam.teacher.toString() !== teacherUser._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to delete this exam' });
@@ -107,62 +100,95 @@ const deleteExam = async (req, res) => {
     res.status(500).json({ message: 'Error deleting exam' });
   }
 };
+
+// 📌 Assign student to exam
 const assignStudentToExam = async (req, res) => {
   try {
     const { examId } = req.params;
     const { studentId } = req.body;
 
-    console.log("[DEBUG] assignStudentToExam called with:", { examId, studentId });
-
-    // Find the student by userId
     const student = await User.findOne({ userId: studentId, role: 'student' });
-    if (!student) {
-      console.log("[DEBUG] Student not found for ID:", studentId);
-      return res.status(404).json({ message: 'Student not found' });
-    }
-    console.log("[DEBUG] Found student:", student);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
 
-    // Find the exam by ID
     const exam = await Exam.findById(examId);
-    if (!exam) {
-      console.log("[DEBUG] Exam not found for ID:", examId);
-      return res.status(404).json({ message: 'Exam not found' });
-    }
-    console.log("[DEBUG] Found exam:", exam.examName, "AssignedTo:", exam.assignedTo);
+    if (!exam) return res.status(404).json({ message: 'Exam not found' });
 
-    // Check if student is already assigned
-    const alreadyAssigned = exam.assignedTo.some(
-      (s) => s.studentId && s.studentId.toString() === student._id.toString()
+    const existing = exam.assignedTo.find(
+      s => s.studentId.toString() === student._id.toString()
     );
 
-    console.log("[DEBUG] Already assigned?", alreadyAssigned);
-
-    if (!alreadyAssigned) {
-      // Add student with isActive true
-      exam.assignedTo.push({
-        studentId: student._id,
-        isActive: true,
-        submitted: false,
-      });
-      await exam.save();
-      console.log("[DEBUG] Student added and activated:", student._id);
+    if (!existing) {
+      exam.assignedTo.push({ studentId: student._id, isActive: true, submitted: false });
     } else {
-      // If already assigned but inactive, activate the exam for them
-      exam.assignedTo = exam.assignedTo.map((s) => {
-        if (s.studentId.toString() === student._id.toString()) {
-          console.log("[DEBUG] Activating already assigned student:", student._id);
-          return { ...s.toObject(), isActive: true }; // activate
-        }
-        return s;
-      });
-      await exam.save();
+      existing.isActive = true; // Reactivate if previously inactive
     }
 
-    console.log("[DEBUG] Updated exam assignedTo:", exam.assignedTo);
+    await exam.save();
     res.json({ message: 'Student assigned and activated for exam', student });
   } catch (err) {
-    console.error('Error assigning student:', err);
+    console.error('❌ Error assigning student:', err);
     res.status(500).json({ message: 'Server error while assigning student' });
+  }
+};
+
+// 📌 Get submissions for a specific exam
+const getExamSubmissions = async (req, res) => {
+  try {
+    const { examId } = req.params;
+    const exam = await Exam.findById(examId);
+    if (!exam) return res.status(404).json({ message: 'Exam not found' });
+
+    const teacherUser = await User.findOne({ userId: req.user.userId });
+    if (!teacherUser || exam.teacher.toString() !== teacherUser._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to view submissions' });
+    }
+
+    const submissions = await StudentExam.find({ exam: examId })
+      .populate('student', 'name userId')
+      .sort({ submittedAt: -1 });
+
+    res.json(submissions);
+  } catch (err) {
+    console.error("❌ Error fetching submissions:", err);
+    res.status(500).json({ message: 'Error fetching submissions' });
+  }
+};
+
+// 📌 Publish result for a student submission
+const publishSubmission = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const submission = await StudentExam.findById(submissionId).populate('exam');
+    if (!submission) return res.status(404).json({ message: 'Submission not found' });
+
+    const teacherUser = await User.findOne({ userId: req.user.userId });
+    if (!teacherUser || submission.exam.teacher.toString() !== teacherUser._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to publish result' });
+    }
+
+    // ✅ Calculate score if not done
+    if (!submission.score && submission.answers) {
+      let score = 0;
+      const examQuestions = submission.exam.questions || [];
+      examQuestions.forEach(q => {
+        const ansIndex = submission.answers.get(q._id.toString());
+        if (ansIndex === q.correctAnswer) score++;
+      });
+      submission.score = score;
+    }
+
+    // ✅ Set total questions
+    submission.total = submission.exam.questions.length;
+
+    submission.isPublished = true;
+    submission.reviewedBy = teacherUser._id;
+    submission.status = "reviewed";
+
+    await submission.save();
+    res.json({ message: 'Result published successfully', submission });
+  } catch (err) {
+    console.error("❌ Error publishing result:", err);
+    res.status(500).json({ message: 'Error publishing result' });
   }
 };
 
@@ -172,4 +198,6 @@ module.exports = {
   getExamsByTeacher,
   deleteExam,
   assignStudentToExam,
+  getExamSubmissions,
+  publishSubmission,
 };

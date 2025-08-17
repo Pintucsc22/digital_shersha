@@ -1,21 +1,28 @@
-// routes/teacherExamRoutes.js
 const express = require('express');
 const router = express.Router();
 const {
   createExam,
   getExamsByTeacher,
-  getExamById,
   deleteExam,
   updateExam,
-} = require('../controllers/teacherExamController'); // ✅ Matches controller file exactly
+  assignStudentToExam,
+  getExamSubmissions,
+  publishSubmission
+} = require('../controllers/teacherExamController');
 
 const auth = require('../middleware/authMiddleware');
 
 // ✅ All teacher routes are protected
 router.post('/', auth, createExam); // Create exam
 router.get('/', auth, getExamsByTeacher); // Get all exams created by logged-in teacher
-// router.get('/:id', auth, getExamById); // Get single exam with results
+router.put('/:id', auth, updateExam); // Update exam
 router.delete('/:id', auth, deleteExam); // Delete exam
-router.put('/:id', auth, updateExam);
+
+// Assign student to exam
+router.post('/:examId/assign', auth, assignStudentToExam);
+
+// 📌 New routes for submissions
+router.get('/:examId/submissions', auth, getExamSubmissions);
+router.patch('/submissions/:submissionId/publish', auth, publishSubmission);
 
 module.exports = router;

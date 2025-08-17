@@ -5,7 +5,17 @@ const studentExamSchema = new mongoose.Schema({
   exam: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true },
   answers: { type: Map, of: Number, required: true }, // { questionId: selectedOptionIndex }
   score: { type: Number, default: 0 },
-  submittedAt: { type: Date, default: Date.now }
+  total: { type: Number, default: 0 }, // ✅ total number of questions
+  submittedAt: { type: Date, default: Date.now },
+
+  // ✅ New Fields
+  isPublished: { type: Boolean, default: false }, // Teacher controls if results are visible
+  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Teacher who reviewed/approved
+  status: { 
+    type: String, 
+    enum: ["assigned", "submitted", "reviewed"], 
+    default: "assigned" 
+  } // To track flow
 });
 
 module.exports = mongoose.model('StudentExam', studentExamSchema);
