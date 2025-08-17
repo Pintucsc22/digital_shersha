@@ -3,7 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const mcqRoutes = require("./routes/mcqRoutes");
-//const studentRoutes =require('./routes/studentRoutes');
+const studentRoutes =require('./routes/studentRoutes');
 const studentExamRoutes =require('./routes/studentExamRoutes')
 
 dotenv.config();
@@ -28,7 +28,7 @@ app. use("/api/mcq", mcqRoutes);
 app.use('/api/teacherQuestions', require('./routes/teacherQuestionsRoutes'));
 app.use('/api/', require('./routes/studentUserRoutes'));
 app.use('/api/student/exam', studentExamRoutes);
-// app.use('/api/student', studentRoutes);
+app.use('/api/student', studentRoutes); //last import
 
 // Student-specific question fetching (no correct answers)
 // app.use('/api/student/questions', require('./routes/studentQuestionsRoutes'));

@@ -108,25 +108,62 @@ const deleteExam = async (req, res) => {
   }
 };
 const assignStudentToExam = async (req, res) => {
-  try{
-  const {examId} =req.params;
-  const {studentId} =req.body;
-// Find Student by Id
-  const student =await User.findOne({userId: studentId, role: 'student'});
-  if (!student) {return res.status(404).json({message: 'Student not found'})};
-// Find exam by Id
-  const exam =await Exam.findById(examId);
-  if(!exam) {return res.status(404).json({message: 'Exam not found'})};
-// Avoid duplicate assignment
-  if (!exam.assignedTo.includes(student._id)) {
-    exam.assignedTo.push(student._id);
-    await exam.save();
+  try {
+    const { examId } = req.params;
+    const { studentId } = req.body;
+
+    console.log("[DEBUG] assignStudentToExam called with:", { examId, studentId });
+
+    // Find the student by userId
+    const student = await User.findOne({ userId: studentId, role: 'student' });
+    if (!student) {
+      console.log("[DEBUG] Student not found for ID:", studentId);
+      return res.status(404).json({ message: 'Student not found' });
+    }
+    console.log("[DEBUG] Found student:", student);
+
+    // Find the exam by ID
+    const exam = await Exam.findById(examId);
+    if (!exam) {
+      console.log("[DEBUG] Exam not found for ID:", examId);
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+    console.log("[DEBUG] Found exam:", exam.examName, "AssignedTo:", exam.assignedTo);
+
+    // Check if student is already assigned
+    const alreadyAssigned = exam.assignedTo.some(
+      (s) => s.studentId && s.studentId.toString() === student._id.toString()
+    );
+
+    console.log("[DEBUG] Already assigned?", alreadyAssigned);
+
+    if (!alreadyAssigned) {
+      // Add student with isActive true
+      exam.assignedTo.push({
+        studentId: student._id,
+        isActive: true,
+        submitted: false,
+      });
+      await exam.save();
+      console.log("[DEBUG] Student added and activated:", student._id);
+    } else {
+      // If already assigned but inactive, activate the exam for them
+      exam.assignedTo = exam.assignedTo.map((s) => {
+        if (s.studentId.toString() === student._id.toString()) {
+          console.log("[DEBUG] Activating already assigned student:", student._id);
+          return { ...s.toObject(), isActive: true }; // activate
+        }
+        return s;
+      });
+      await exam.save();
+    }
+
+    console.log("[DEBUG] Updated exam assignedTo:", exam.assignedTo);
+    res.json({ message: 'Student assigned and activated for exam', student });
+  } catch (err) {
+    console.error('Error assigning student:', err);
+    res.status(500).json({ message: 'Server error while assigning student' });
   }
-  res.json({message: 'Student assigned', student});
-} catch (err) {
-  console.log ('Error assign student:', err);
-  res.status(500).json({ message:'Server error while assigning student'});
-}
 };
 
 module.exports = {

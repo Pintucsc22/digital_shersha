@@ -16,10 +16,13 @@ const examSchema = new mongoose.Schema({
   startTime: { type: Date },
   endTime: { type: Date },
   questions: [questionSchema],
-  assignedTo: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  }],
+  assignedTo: [
+    {
+      studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      isActive: { type: Boolean, default: false },
+      submitted: { type: Boolean, default: false }
+    }
+  ],
   teacher: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

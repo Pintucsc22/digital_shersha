@@ -8,7 +8,8 @@ import TeacherDashboard from './pages/TeacherDashboard';
 // import ExamPage from './pages/ExamPage';
 import QuestionManager from './components/McqQuestionManager';
 import MCQPage from './pages/MCQpage';
-// import StudentExamPage from './pages/student/StudentExamPage';
+// import TakeExam from './pages/TakeExam'; //last import
+import StudentExamPage from './pages/student/StudentExamPage';
 
 // ✅ Define the main App component
 const App = () => {
@@ -23,9 +24,15 @@ const App = () => {
         <Route path="/teacher" element={<TeacherDashboard />} />
 
         {/* ✅ When the URL is "/exam/:id", render the ExamPage component with the dynamic "id" */}
-         {/* <Route path="/student/exam/:examId" element={<StudentExamPage />} />  */}
+        {/* //last import */}
+         <Route path="/student/exam/:examId" element={<StudentExamPage />} /> 
+
+
         <Route path="/manage-questions/:examId" element={<QuestionManager />} />
+        {/* last import */}
         {/* <Route path="/student/exam/:examId" element={<TakeExam />} />  */}
+
+
         <Route path="/teacher/exam/:id/mcqs" element={<MCQPage />} />
       </Routes>
     </BrowserRouter>
