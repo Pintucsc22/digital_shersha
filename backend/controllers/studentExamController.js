@@ -1,30 +1,32 @@
 const Exam = require('../models/Exam');
 const StudentExam = require('../models/StudentExam');
+const User = require('../models/userModel');
 
-// GET /api/student/exam/:examId
+// =======================
+// Fetch exam questions (without correct answers)
+// =======================
 exports.getExamForStudent = async (req, res) => {
   try {
     const { examId } = req.params;
-    console.log('[DEBUG] Fetching exam for student:', examId);
+    const student = await User.findOne({ userId: req.user.userId, role: 'student' });
+
+    if (!student) return res.status(404).json({ message: 'Student not found' });
 
     const exam = await Exam.findById(examId);
-    if (!exam) {
-      console.log('[DEBUG] Exam not found');
-      return res.status(404).json({ message: 'Exam not found' });
-    }
+    if (!exam) return res.status(404).json({ message: 'Exam not found' });
 
-    if (!exam.isActive) {
-      console.log('[DEBUG] Exam is not active');
-      return res.status(403).json({ message: 'Exam is not active' });
-    }
+    // Ensure this student is assigned & active
+    const assigned = exam.assignedTo.find(
+      a => a.studentId.toString() === student._id.toString() && a.isActive
+    );
+    if (!assigned) return res.status(403).json({ message: 'Exam not active for this student' });
 
+    // Return questions without correctAnswer
     const questions = exam.questions.map(q => ({
       _id: q._id,
       question: q.question,
       options: q.options,
     }));
-
-    console.log('[DEBUG] Returning questions:', questions.length);
 
     res.json({
       examName: exam.examName,
@@ -37,13 +39,16 @@ exports.getExamForStudent = async (req, res) => {
   }
 };
 
-// POST /api/student/exam/:examId/submit
+// =======================
+// Submit exam answers
+// =======================
 exports.submitExam = async (req, res) => {
   try {
     const { examId } = req.params;
-    const studentId = req.user.userId; // <-- from JWT
-    const { answers } = req.body;
+    const student = await User.findOne({ userId: req.user.userId, role: 'student' });
+    if (!student) return res.status(404).json({ message: 'Student not found' });
 
+    const { answers } = req.body;
     if (!answers || typeof answers !== 'object') {
       return res.status(400).json({ message: 'Invalid answers payload' });
     }
@@ -51,22 +56,26 @@ exports.submitExam = async (req, res) => {
     const exam = await Exam.findById(examId);
     if (!exam) return res.status(404).json({ message: 'Exam not found' });
 
-    const processedAnswers = {};
-    exam.questions.forEach(q => {
-      processedAnswers[q._id] = answers[q._id] !== undefined ? Number(answers[q._id]) : -1;
-    });
-
+    // Score calculation
     let score = 0;
     exam.questions.forEach(q => {
-      if (processedAnswers[q._id] === q.correctAnswer) score++;
+      const ans = answers[q._id];
+      if (ans !== undefined && Number(ans) === q.correctAnswer) score++;
     });
 
     const submission = await StudentExam.create({
-      student: studentId, // <-- use JWT userId
-      exam: examId,
-      answers: processedAnswers,
+      student: student._id,
+      exam: exam._id,
+      answers,
       score,
+      total: exam.questions.length
     });
+
+    // Mark exam as submitted in `assignedTo`
+    await Exam.updateOne(
+      { _id: examId, 'assignedTo.studentId': student._id },
+      { $set: { 'assignedTo.$.submitted': true } }
+    );
 
     res.json({ message: 'Exam submitted successfully', score });
   } catch (err) {
@@ -74,4 +83,3 @@ exports.submitExam = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-

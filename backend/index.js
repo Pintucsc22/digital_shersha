@@ -18,7 +18,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/teacher/exams', require('./routes/teacherExamRoutes')); // ✅ Teacher exams
-//app.use('/api/results', require('./routes/resultRoutes'));
+app.use('/api/results', require('./routes/resultRoutes'));//last import
 app.use('/api/email', require('./routes/emailRoutes'));
 
 // Questions (Teacher Only)

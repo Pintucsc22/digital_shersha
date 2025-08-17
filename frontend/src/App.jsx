@@ -4,8 +4,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
-
-// import ExamPage from './pages/ExamPage';
 import QuestionManager from './components/McqQuestionManager';
 import MCQPage from './pages/MCQpage';
 // import TakeExam from './pages/TakeExam'; //last import
@@ -29,8 +27,7 @@ const App = () => {
 
 
         <Route path="/manage-questions/:examId" element={<QuestionManager />} />
-        {/* last import */}
-        {/* <Route path="/student/exam/:examId" element={<TakeExam />} />  */}
+        
 
 
         <Route path="/teacher/exam/:id/mcqs" element={<MCQPage />} />
