@@ -232,7 +232,7 @@ const TeacherDashboard = () => {
             <button onClick={() => handleDeleteExam(exam._id)}>Delete</button>
             <button
               onClick={() => navigate(`/teacher/exam/${exam._id}/mcqs`)}
-              className="btn btn-primary"
+              className="bg-blue-500 text-white px-3 py-1 rounded"
             >
               Questions
             </button>
@@ -278,6 +278,14 @@ const TeacherDashboard = () => {
                 )}
               </div>
             )}
+
+            {/* New Button to View Submissions */}
+            <button
+              onClick={() => navigate(`/teacher/exam/${exam._id}/submissions`)}
+              className="bg-purple-500 text-white px-3 py-1 rounded mt-2"
+            >
+              View Submissions
+            </button>
           </div>
         ))}
       </div>

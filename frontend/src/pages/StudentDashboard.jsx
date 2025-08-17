@@ -5,8 +5,8 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const [student, setStudent] = useState(null);
   const [availableExams, setAvailableExams] = useState([]);
+  const [results, setResults] = useState([]);
 
-  // ✅ On mount, check user role
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem('user'));
     if (!storedUser || storedUser.role !== 'student') {
@@ -16,37 +16,46 @@ const StudentDashboard = () => {
     }
   }, [navigate]);
 
-  // ✅ Fetch assigned exams
   useEffect(() => {
     const fetchExams = async () => {
       const token = localStorage.getItem('token');
       try {
         const res = await fetch('http://localhost:5000/api/student/exams', {
           headers: { Authorization: `Bearer ${token}` },
-          cache: 'no-store',
         });
-        if (!res.ok && res.status !== 304) throw new Error('Failed to fetch exams');
+        if (!res.ok) throw new Error('Failed to fetch exams');
         const data = await res.json();
-
-        
-
         setAvailableExams(data);
       } catch (err) {
         console.error('❌ Error fetching exams:', err);
       }
     };
-
     if (student) fetchExams();
   }, [student]);
 
-  // ✅ Logout handler
+  useEffect(() => {
+    const fetchResults = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('http://localhost:5000/api/student/results', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to fetch results');
+        const data = await res.json();
+        setResults(data);
+      } catch (err) {
+        console.error('❌ Error fetching results:', err);
+      }
+    };
+    if (student) fetchResults();
+  }, [student]);
+
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     navigate('/');
   };
 
-  // Prevent render if student not loaded
   if (!student) return null;
 
   return (
@@ -56,7 +65,7 @@ const StudentDashboard = () => {
         <h1 className="text-xl font-bold text-gray-800">
           Welcome, {student.name || 'Student'}!
         </h1>
-        <p className='text-xl font-bold text-gray-800'>
+        <p className="text-xl font-bold text-gray-800">
           ID: {student.userId} | Class: {student.className || 'N/A'}
         </p>
         <button
@@ -93,14 +102,30 @@ const StudentDashboard = () => {
           )}
         </div>
 
-        {/* Notice Board */}
+        {/* Student Results */}
         <div className="bg-white shadow rounded p-4">
-          <h2 className="text-lg font-semibold mb-2">Notice Board</h2>
-          <ul className="text-sm text-gray-700 space-y-1">
-            <li>Library will be closed on Sunday</li>
-            <li>Next PTM on 20 Aug</li>
-            <li>Submit projects by 18 Aug</li>
-          </ul>
+          <h2 className="text-lg font-semibold mb-2">My Results</h2>
+          {results.length > 0 ? (
+            <ul className="text-sm text-gray-700 space-y-2">
+              {results.map((r) => (
+                <li
+                  key={r.submissionId}
+                  className="flex justify-between items-center border-b pb-1"
+                >
+                  <span>
+                    {r.examName} ({r.topic})
+                  </span>
+                  <div>
+                    <span className="font-bold text-green-600">
+                      Score: {r.score}/{r.total}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500 text-sm">No results available yet.</p>
+          )}
         </div>
       </div>
     </div>
