@@ -36,13 +36,19 @@ const TeacherDashboard = () => {
         method = "PUT";
       }
 
+      // Convert date to ISO at midnight local time
+      const payload = {
+        ...formData,
+        date: formData.date ? new Date(formData.date + "T00:00:00").toISOString() : null,
+      };
+
       const res = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error("Failed to save exam");
@@ -54,7 +60,6 @@ const TeacherDashboard = () => {
         );
         setEditingExam(null);
       } else {
-        // Add latest exam to the top
         setExams((prev) => [savedExam, ...prev]);
       }
 
@@ -76,7 +81,6 @@ const TeacherDashboard = () => {
     })
       .then((res) => res.json())
       .then((data) => {
-        // Sort exams: latest first
         const sorted = data.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
@@ -87,11 +91,13 @@ const TeacherDashboard = () => {
 
   const handleEditClick = (exam) => {
     setEditingExam(exam);
+    // Convert stored ISO date to YYYY-MM-DD for input
+    const localDate = exam.date ? new Date(exam.date).toISOString().split("T")[0] : "";
     setFormData({
       examName: exam.examName,
       className: exam.className,
       topic: exam.topic,
-      date: new Date(exam.date).toISOString().split("T")[0],
+      date: localDate,
       duration: exam.duration,
     });
   };
