@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const mcqRoutes = require("./routes/mcqRoutes");
 const studentRoutes =require('./routes/studentRoutes');
 const studentExamRoutes =require('./routes/studentExamRoutes')
+const leaderboardRoutes = require('./routes/leaderboard'); // Import leaderboard routes
 
 dotenv.config();
 connectDB();
@@ -30,6 +31,7 @@ app.use('/api/', require('./routes/studentUserRoutes'));
 app.use('/api/student/exam', studentExamRoutes);
 app.use('/api/student', studentRoutes);
 app.use("/api/student/results", require("./routes/studentResultRoutes"));
+app.use('/api', leaderboardRoutes); // Use leaderboard routes
 
 
 // Student-specific question fetching (no correct answers)

@@ -5,8 +5,8 @@ import Home from './pages/Home';
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherExamControlSubmission from './pages/TeacherExamControlSubmission';
 import TeacherDashboard from './pages/TeacherDashboard';
-import QuestionManager from './components/McqQuestionManager';
-import MCQPage from './pages/MCQpage';
+import McqQuestionManager from './components/McqQuestionManager';
+// import MCQPage from './pages/MCQpage';
 
 import StudentExamPage from './pages/student/StudentExamPage';
 
@@ -30,11 +30,11 @@ const App = () => {
         
 
 
-        <Route path="/manage-questions/:examId" element={<QuestionManager />} />
+        <Route path="/manage-questions/:examId" element={<McqQuestionManager />} />
         
 
 
-        <Route path="/teacher/exam/:id/mcqs" element={<MCQPage />} />
+        <Route path="/teacher/exam/:examId/mcqs" element={<McqQuestionManager />} />
       </Routes>
     </BrowserRouter>
   );

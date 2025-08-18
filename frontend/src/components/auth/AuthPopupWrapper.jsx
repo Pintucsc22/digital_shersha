@@ -1,21 +1,24 @@
-// AuthPopupWrapper.js
+// import React from 'react';
+// import PropTypes from 'prop-types';
+// import RegisterChatBox from './RegisterChatBox';
+// import LoginChatBox from './LoginChatBox';
 
-import React from 'react';
-import RegisterChatBox from './RegisterChatBox';
-import LoginChatBox from './LoginChatBox';
-// Later you'll also import LoginChatBox
-// import LoginChatBox from './auth/LoginChatBox';
+// const AuthPopupWrapper = ({ type, onClose }) => {
+//   if (type === 'register') {
+//     return <RegisterChatBox onClose={onClose} />;
+//   }
 
-const AuthPopupWrapper = ({ type, onClose }) => {
-  if (type === 'register') {
-    return <RegisterChatBox onClose={onClose} />;
-  }
+//   if (type === 'login') {
+//     return <LoginChatBox onClose={onClose} />;
+//   }
 
-  if (type === 'login') {
-    return <LoginChatBox onClose={onClose} />;
-    }
+//   return null;
+// };
 
-  return null;
-};
+// // ✅ Add PropTypes for type checking
+// AuthPopupWrapper.propTypes = {
+//   type: PropTypes.oneOf(['login', 'register']), // Only allow 'login' or 'register'
+//   onClose: PropTypes.func.isRequired,           // onClose must be a function
+// };
 
-export default AuthPopupWrapper;
+// export default AuthPopupWrapper;

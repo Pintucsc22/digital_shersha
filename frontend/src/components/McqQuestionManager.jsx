@@ -1,237 +1,163 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
 
 const McqQuestionManager = ({ examId: propExamId }) => {
   const params = useParams();
-  const examId = propExamId || params.examId; // Use prop if passed, else fallback to URL param
+  const examId = propExamId || params.examId;
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
 
   const [questions, setQuestions] = useState([]);
-  const [questionText, setQuestionText] = useState('');
-  const [options, setOptions] = useState(['', '', '', '']);
-  const [correctAnswer, setCorrectAnswer] = useState(null);
-  const [editingQuestionId, setEditingQuestionId] = useState(null);
+  const [newQuestion, setNewQuestion] = useState({
+    question: "",
+    options: ["", "", "", ""],
+    correctOption: "",
+  });
+
+  const API_BASE = "http://localhost:5000/api/mcq";
+  const optionLetters = ["A", "B", "C", "D"];
 
   useEffect(() => {
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    if (examId) {
-      fetchQuestions();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!examId) return;
+
+    axios
+      .get(`${API_BASE}/${examId}/mcqs`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        console.log("Fetched Questions:", res.data);
+        setQuestions(res.data);
+      })
+      .catch((err) => console.error("Error fetching questions:", err));
   }, [examId, token]);
 
-  const fetchQuestions = async () => {
-    try {
-      const res = await fetch(`http://localhost:5000/api/teacher/questions/exam/${examId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.status === 401) {
-        localStorage.removeItem('token');
-        navigate('/login');
-        return;
-      }
-
-      if (!res.ok) throw new Error('Failed to fetch questions');
-
-      const data = await res.json();
-      setQuestions(data);
-    } catch (err) {
-      console.error('Failed to fetch questions', err);
-      alert('Error fetching questions');
-    }
+  const handleAddQuestion = () => {
+    axios
+      .post(
+        `${API_BASE}/${examId}/mcqs`,
+        newQuestion,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      .then((res) => {
+        setQuestions((prev) => [...prev, res.data]);
+        setNewQuestion({
+          question: "",
+          options: ["", "", "", ""],
+          correctOption: "",
+        });
+      })
+      .catch((err) => console.error("Error adding question:", err));
   };
 
-  const handleOptionChange = (index, value) => {
-    const newOptions = [...options];
-    newOptions[index] = value;
-    setOptions(newOptions);
+  const handleDeleteQuestion = (index) => {
+    axios
+      .delete(`${API_BASE}/${examId}/${index}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(() => {
+        setQuestions((prev) => prev.filter((_, i) => i !== index));
+      })
+      .catch((err) => console.error("Error deleting question:", err));
   };
-
-  const resetForm = () => {
-    setQuestionText('');
-    setOptions(['', '', '', '']);
-    setCorrectAnswer(null);
-    setEditingQuestionId(null);
-  };
-
-  const handleAddOrUpdateQuestion = async () => {
-    if (!questionText || options.some((opt) => !opt) || correctAnswer === null) {
-      alert('All fields are required.');
-      return;
-    }
-
-    const payload = {
-      questionText,
-      options,
-      correctAnswer,
-      // examId is not sent in body since it's in URL
-    };
-
-    try {
-      const res = await fetch(
-        editingQuestionId
-          ? `http://localhost:5000/api/teacher/questions/${editingQuestionId}`
-          : `http://localhost:5000/api/teacher/questions/${examId}`,
-        {
-          method: editingQuestionId ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (res.status === 401) {
-        localStorage.removeItem('token');
-        navigate('/login');
-        return;
-      }
-
-      const data = await res.json();
-
-      if (res.ok) {
-        if (editingQuestionId) {
-          setQuestions((prev) => prev.map((q) => (q._id === editingQuestionId ? data : q)));
-        } else {
-          setQuestions((prev) => [...prev, data]);
-        }
-        resetForm();
-      } else {
-        alert(data.message || 'Failed to save question');
-      }
-    } catch (err) {
-      console.error('Error saving question', err);
-      alert('Error saving question');
-    }
-  };
-
-  const handleEdit = (question) => {
-    setEditingQuestionId(question._id);
-    setQuestionText(question.questionText);
-    setOptions(question.options);
-    setCorrectAnswer(question.correctAnswer);
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this question?')) return;
-
-    try {
-      const res = await fetch(`http://localhost:5000/api/teacher/questions/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.status === 401) {
-        localStorage.removeItem('token');
-        navigate('/login');
-        return;
-      }
-
-      if (res.ok) {
-        setQuestions((prev) => prev.filter((q) => q._id !== id));
-      } else {
-        alert('Failed to delete question');
-      }
-    } catch (err) {
-      console.error('Error deleting question', err);
-      alert('Error deleting question');
-    }
-  };
-
-  if (!examId) {
-    return (
-      <div className="mt-4 text-red-600 font-semibold">
-        No exam selected. Please go back and select an exam.
-      </div>
-    );
-  }
 
   return (
-    <div className="mt-4 bg-gray-50 border p-4 rounded">
-      <button onClick={() => navigate('/teacher')} className="mb-4 text-blue-600 hover:underline">
-        ← Back to Dashboard
-      </button>
-
-      <h4 className="text-lg font-semibold mb-3">
-        {editingQuestionId ? 'Edit Question' : 'Add New Question'}
-      </h4>
-
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Question text"
-          value={questionText}
-          onChange={(e) => setQuestionText(e.target.value)}
-          className="w-full border px-3 py-2 rounded mb-2"
-        />
-
-        {options.map((opt, idx) => (
-          <div key={idx} className="flex items-center mb-1">
-            <input
-              type="radio"
-              name="correct"
-              checked={correctAnswer === idx}
-              onChange={() => setCorrectAnswer(idx)}
-              className="mr-2"
-            />
-            <input
-              type="text"
-              placeholder={`Option ${String.fromCharCode(65 + idx)}:`}
-              value={opt}
-              onChange={(e) => handleOptionChange(idx, e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-            />
-          </div>
-        ))}
-
-        <div className="mt-3 space-x-2">
-          <button onClick={handleAddOrUpdateQuestion} className="bg-green-600 text-white px-4 py-2 rounded">
-            {editingQuestionId ? 'Update Question' : 'Add Question'}
-          </button>
-          {editingQuestionId && (
-            <button onClick={resetForm} className="bg-gray-400 text-white px-4 py-2 rounded">
-              Cancel
-            </button>
-          )}
-        </div>
+    <div className="p-6 bg-white rounded-xl shadow-md">
+      {/* Back Button */}
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => navigate("/teacher-dashboard")}
+          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+        >
+          ⬅ Back to Dashboard
+        </button>
       </div>
 
+      <h2 className="text-2xl font-bold mb-4">Manage MCQs</h2>
+
+      {/* Add New Question */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Enter question"
+          className="border p-2 w-full mb-2 rounded"
+          value={newQuestion.question}
+          onChange={(e) =>
+            setNewQuestion({ ...newQuestion, question: e.target.value })
+          }
+        />
+
+        {newQuestion.options.map((opt, i) => (
+          <input
+            key={i}
+            type="text"
+            placeholder={`Option ${i + 1}`}
+            className="border p-2 w-full mb-2 rounded"
+            value={opt}
+            onChange={(e) => {
+              const updatedOptions = [...newQuestion.options];
+              updatedOptions[i] = e.target.value;
+              setNewQuestion({ ...newQuestion, options: updatedOptions });
+            }}
+          />
+        ))}
+
+        <select
+          className="border p-2 w-full mb-2 rounded"
+          value={newQuestion.correctOption}
+          onChange={(e) =>
+            setNewQuestion({ ...newQuestion, correctOption: e.target.value })
+          }
+        >
+          <option value="">Select Correct Option</option>
+          {optionLetters.map((letter) => (
+            <option key={letter} value={letter}>
+              {letter}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={handleAddQuestion}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Add Question
+        </button>
+      </div>
+
+      {/* Existing Questions */}
       <div>
-        <h5 className="font-semibold mb-2">Existing Questions:</h5>
+        <h3 className="text-xl font-semibold mb-2">Existing Questions</h3>
         {questions.length === 0 ? (
-          <p className="text-sm text-gray-600">No questions added yet.</p>
+          <p>No questions yet.</p>
         ) : (
-          <ul className="space-y-2">
-            {questions.map((q, index) => (
-              <li key={q._id} className="bg-white p-3 border rounded shadow-sm">
-                <p className="font-medium">
-                  {index + 1}. {q.questionText}
-                </p>
-                <ul className="list-disc ml-6 text-sm text-gray-700">
-                  {q.options.map((opt, idx) => (
-                    <li key={idx} className={idx === q.correctAnswer ? 'font-semibold text-green-700' : ''}>
-                      {String.fromCharCode(65 + idx)}. {opt}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-2 space-x-2">
-                  <button onClick={() => handleEdit(q)} className="text-blue-600 hover:underline">
-                    Edit
-                  </button>
-                  <button onClick={() => handleDelete(q._id)} className="text-red-600 hover:underline">
-                    Delete
-                  </button>
+          <ul className="space-y-4">
+            {questions.map((q, idx) => (
+              <li
+                key={idx}
+                className="border p-3 rounded flex justify-between items-start"
+              >
+                <div>
+                  <p className="font-bold">
+                    {idx + 1}. {q.question}
+                  </p>
+                  <ul className="list-disc ml-6">
+                    {q.options.map((opt, i) => (
+                      <li key={i}>
+                        {optionLetters[i]}. {opt}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-green-600">
+                    Correct Answer: {optionLetters[q.correctAnswer]}
+                  </p>
                 </div>
+                <button
+                  onClick={() => handleDeleteQuestion(idx)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
               </li>
             ))}
           </ul>
