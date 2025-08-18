@@ -1,75 +1,111 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import Header from '../components/Header';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
+import Header from '../components/Header';
 import NoticeSection from '../components/NoticeSection';
-import ScoreGraph from '../components/ScoreGraph';
+import LeaderboardWrapper from '../components/LeaderboardWrapper';
 import Testimonials from '../components/Testimonials';
-import AuthPopupWrapper from '../components/auth/AuthPopupWrapper';
+import ChatBox from '../components/ChatBox'; // Reusable ChatBox
+import apjSirImage from '../assets/apj_abdul_kalam_sir.png';
 
 const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [popupType, setPopupType] = useState(null); // 'login' or 'register'
 
+  // Redirect if already logged in
   useEffect(() => {
-    // ✅ If user is logged in, redirect them
-    const user = JSON.parse(localStorage.getItem('user'));
+    let user = null;
+    try {
+      user = JSON.parse(localStorage.getItem('user'));
+    } catch (err) {
+      console.error('Error parsing user from localStorage:', err);
+    }
+
     if (user) {
-      if (user.role === 'teacher') {
-        navigate('/teacher');
-      } else if (user.role === 'student') {
-        navigate('/student');
-      }
+      if (user.role === 'teacher') navigate('/teacher');
+      else if (user.role === 'student') navigate('/student');
     }
   }, [navigate]);
 
+  // Show popup if URL has ?auth=login or ?auth=register
   useEffect(() => {
-    // ✅ Check URL query ?auth=login or ?auth=register
     const query = new URLSearchParams(location.search);
-    const auth = query.get("auth");
-    if (auth === "login" || auth === "register") {
+    const auth = query.get('auth');
+    if (auth === 'login' || auth === 'register') {
       setPopupType(auth);
     }
   }, [location]);
 
   const handleClosePopup = () => {
     setPopupType(null);
-    // ✅ Remove query param from URL
     const params = new URLSearchParams(location.search);
-    params.delete("auth");
-    navigate({ pathname: "/", search: params.toString() });
+    params.delete('auth');
+    navigate({ pathname: '/', search: params.toString() ? `?${params.toString()}` : '' });
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 scroll-smooth">
       <Header />
-      <div className="p-6">
+
+      <main className="p-6 max-w-7xl mx-auto">
         <NoticeSection />
-        <div className="flex gap-4 my-6">
+
+        {/* Motivational Quote Section */}
+        <div className="flex flex-col md:flex-row items-center gap-6 my-8 
+                        bg-gray-900 p-6 rounded-2xl shadow-xl transform transition-all duration-500 
+                        hover:scale-[1.02] hover:shadow-2xl">
+          {/* Image */}
           <img
-            src="https://via.placeholder.com/150"
-            alt="Owner"
-            className="w-1/3 rounded shadow"
+            src={apjSirImage}
+            alt="APJ Abdul Kalam Sir"
+            className="w-full md:w-1/3 rounded-xl shadow-2xl border-4 border-yellow-500
+                      transform transition-transform duration-700 hover:scale-105 hover:animate-pulse"
           />
-          <div className="w-2/3">
-            <h2 className="text-2xl font-semibold mb-2">Motivational Quote</h2>
-            <p className="mb-4 italic">"Education is the passport to the future."</p>
-            <ScoreGraph />
+
+          {/* Quote & Leaderboard */}
+          <div className="w-full md:w-2/3 text-center md:text-left">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-yellow-300 
+                          drop-shadow-[0_0_10px_rgba(255,255,0,0.7)] animate-bounce">
+              Motivational Quote
+            </h2>
+
+            <blockquote className="mb-6 italic text-lg md:text-xl text-gray-200 
+                                  border-l-4 border-yellow-400 pl-4 relative 
+                                  before:content-['“'] before:absolute before:-left-3 before:text-4xl before:text-yellow-400 
+                                  after:content-['”'] after:text-4xl after:text-yellow-400 
+                                  hover:text-yellow-300 transition-colors duration-300">
+              "Education is the passport to the future." <br />
+              "You have to dream before your dreams can come true."
+            </blockquote>
+
+            <div className="bg-gray-800 p-4 rounded-xl shadow-inner mt-4 transition-transform duration-500 hover:scale-[1.02]">
+              <LeaderboardWrapper />
+            </div>
           </div>
         </div>
+
         <Testimonials />
-        <div className="bg-blue-100 p-4 rounded my-6">
-          <h2 className="text-xl font-bold">Why this exam is important?</h2>
-          <p className="mt-2">
-            Our platform prepares students for real competitive exams in an interactive and efficient manner.
+
+        {/* Why this exam is important */}
+        <section className="bg-gray-800 p-6 rounded-2xl my-6 shadow-md transform transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
+          <h2 className="text-xl md:text-2xl font-bold mb-3 text-yellow-300 drop-shadow-md animate-[fadeIn_1s]">
+            Why this exam is important?
+          </h2>
+          <p className="mt-2 text-gray-200 animate-[fadeIn_2s]">
+            Our platform prepares students for real competitive exams in an <span className="text-yellow-300 font-semibold">interactive</span> and <span className="text-yellow-300 font-semibold">efficient</span> manner.
           </p>
-        </div>
-      </div>
+        </section>
+      </main>
+
       <Footer />
 
-      {/* ✅ Show login/register popup if requested in URL */}
-      {popupType && <AuthPopupWrapper type={popupType} onClose={handleClosePopup} />}
+      {/* Reusable ChatBox for login/register */}
+      {popupType && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <ChatBox type={popupType} onClose={handleClosePopup} />
+        </div>
+      )}
     </div>
   );
 };

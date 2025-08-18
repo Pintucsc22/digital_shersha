@@ -28,11 +28,9 @@ const TeacherDashboard = () => {
 
   const handleCreateOrUpdateExam = async (e) => {
     e.preventDefault();
-
     try {
       let url = "http://localhost:5000/api/teacher/exams";
       let method = "POST";
-
       if (editingExam) {
         url += `/${editingExam._id}`;
         method = "PUT";
@@ -56,7 +54,8 @@ const TeacherDashboard = () => {
         );
         setEditingExam(null);
       } else {
-        setExams((prev) => [...prev, savedExam]);
+        // Add latest exam to the top
+        setExams((prev) => [savedExam, ...prev]);
       }
 
       setFormData({
@@ -76,7 +75,13 @@ const TeacherDashboard = () => {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     })
       .then((res) => res.json())
-      .then((data) => setExams(data))
+      .then((data) => {
+        // Sort exams: latest first
+        const sorted = data.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        setExams(sorted);
+      })
       .catch((err) => console.error(err));
   }, []);
 
@@ -160,16 +165,25 @@ const TeacherDashboard = () => {
   };
 
   return (
-    <div>
-      <div>
-        <h2>Welcome, {user?.name}</h2>
-        <p>Your User ID: {user?.userId}</p>
-        <button onClick={handleLogout}>Logout</button>
+    <div className="p-6 space-y-6 bg-gradient-to-b from-gray-50 via-gray-100 to-gray-200 min-h-screen">
+
+      {/* Welcome Section */}
+      <div className="bg-white/95 shadow-lg rounded-lg p-6 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800">Welcome, {user?.name}</h2>
+          <p className="text-gray-600 text-lg">Your User ID: {user?.userId}</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg shadow-md transition-all duration-200"
+        >
+          Logout
+        </button>
       </div>
 
       {/* Exam Form */}
-      <div>
-        <form onSubmit={handleCreateOrUpdateExam}>
+      <div className="bg-white/95 shadow-lg rounded-lg p-6">
+        <form onSubmit={handleCreateOrUpdateExam} className="grid gap-4 md:grid-cols-2">
           <input
             type="text"
             name="examName"
@@ -177,18 +191,18 @@ const TeacherDashboard = () => {
             value={formData.examName}
             onChange={handleChange}
             required
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
           />
           <select
             name="className"
             value={formData.className}
             onChange={handleChange}
             required
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
           >
             <option value="">Select Class</option>
             {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1}>
-                {i + 1}
-              </option>
+              <option key={i + 1} value={i + 1}>{i + 1}</option>
             ))}
           </select>
           <input
@@ -198,6 +212,7 @@ const TeacherDashboard = () => {
             value={formData.topic}
             onChange={handleChange}
             required
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
           />
           <input
             type="date"
@@ -205,6 +220,7 @@ const TeacherDashboard = () => {
             value={formData.date}
             onChange={handleChange}
             required
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
           />
           <input
             type="number"
@@ -213,79 +229,101 @@ const TeacherDashboard = () => {
             value={formData.duration}
             onChange={handleChange}
             required
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
           />
-          <button type="submit">{editingExam ? "Update Exam" : "Create Exam"}</button>
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg shadow-md transition-all duration-200 md:col-span-2"
+          >
+            {editingExam ? "Update Exam" : "Create Exam"}
+          </button>
         </form>
       </div>
 
       {/* Exams List */}
-      <div className="max-h-80 overflow-y-auto border-gray-300 p-4 rounded-lg">
+      <div className="bg-white/95 shadow-lg rounded-lg p-4 max-h-[500px] overflow-y-auto space-y-4">
         {exams.map((exam) => (
-          <div key={exam._id} className="exam-card border-b mb-2 pb-2">
-            <h3>
+          <div
+            key={exam._id}
+            className="exam-card border-b pb-4 hover:shadow-xl hover:scale-[1.02] transition-transform duration-300 rounded-lg p-3"
+          >
+            <h3 className="font-bold text-lg text-gray-800">
               {exam.examName} - Class {exam.className}
             </h3>
-            <p>Topic: {exam.topic}</p>
-            <p>Date: {new Date(exam.date).toLocaleDateString()}</p>
-            <p>Duration: {exam.duration} minutes</p>
-            <button onClick={() => handleEditClick(exam)}>Edit</button>
-            <button onClick={() => handleDeleteExam(exam._id)}>Delete</button>
-            <button
-              onClick={() => navigate(`/teacher/exam/${exam._id}/mcqs`)}
-              className="bg-blue-500 text-white px-3 py-1 rounded"
-            >
-              Questions
-            </button>
+            <p className="text-gray-600">Topic: {exam.topic}</p>
+            <p className="text-gray-600">Date: {new Date(exam.date).toLocaleDateString()}</p>
+            <p className="text-gray-600">Duration: {exam.duration} minutes</p>
 
-            <button
-              onClick={() =>
-                setAssigningExamId(assigningExamId === exam._id ? null : exam._id)
-              }
-              className="bg-green-500 text-white px-3 py-1 rounded"
-            >
-              {assigningExamId === exam._id ? "Cancel" : "Assign Student"}
-            </button>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <button
+                onClick={() => handleEditClick(exam)}
+                className="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDeleteExam(exam._id)}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => navigate(`/teacher/exam/${exam._id}/mcqs`)}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200"
+              >
+                Questions
+              </button>
+              <button
+                onClick={() =>
+                  setAssigningExamId(assigningExamId === exam._id ? null : exam._id)
+                }
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200"
+              >
+                {assigningExamId === exam._id ? "Cancel" : "Assign Student"}
+              </button>
 
-            {assigningExamId === exam._id && (
-              <div className="mt-2 flex flex-col gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter Student ID"
-                  value={studentIdInput}
-                  onChange={(e) => setStudentIdInput(e.target.value)}
-                  className="border px-2 py-1 rounded"
-                />
-                <button
-                  onClick={handleFetchStudent}
-                  className="bg-blue-500 text-white px-3 py-1 rounded"
-                  disabled={!studentIdInput.trim()}
-                >
-                  Fetch Student
-                </button>
+              {assigningExamId === exam._id && (
+                <div className="mt-2 p-4 border rounded-lg bg-gray-50 shadow-lg animate-fadeIn flex flex-col gap-3 transition-all duration-300">
+                  <input
+                    type="text"
+                    placeholder="Enter Student ID"
+                    value={studentIdInput}
+                    onChange={(e) => setStudentIdInput(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                  />
+                  <button
+                    onClick={handleFetchStudent}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md disabled:opacity-50 transition-all duration-200"
+                    disabled={!studentIdInput.trim()}
+                  >
+                    Fetch Student
+                  </button>
 
-                {studentDetails && (
-                  <div className="mt-2 p-2 border rounded bg-gray-50">
-                    <p>Name: {studentDetails.name}</p>
-                    <p>Class: {studentDetails.className || studentDetails.class}</p>
-                    <button
-                      onClick={() => handleAssignStudent(exam._id)}
-                      disabled={assignLoading}
-                      className="bg-green-500 text-white px-3 py-1 rounded mt-2"
-                    >
-                      {assignLoading ? "Assigning..." : "Assign Student"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+                  {studentDetails && (
+                    <div className="mt-2 p-3 border rounded-lg bg-white shadow-md flex flex-col gap-2">
+                      <p className="font-medium text-gray-800">Name: {studentDetails.name}</p>
+                      <p className="text-gray-600">
+                        Class: {studentDetails.className || studentDetails.class}
+                      </p>
+                      <button
+                        onClick={() => handleAssignStudent(exam._id)}
+                        disabled={assignLoading}
+                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200"
+                      >
+                        {assignLoading ? "Assigning..." : "Assign Student"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
-            {/* New Button to View Submissions */}
-            <button
-              onClick={() => navigate(`/teacher/exam/${exam._id}/submissions`)}
-              className="bg-purple-500 text-white px-3 py-1 rounded mt-2"
-            >
-              View Submissions
-            </button>
+              <button
+                onClick={() => navigate(`/teacher/exam/${exam._id}/submissions`)}
+                className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg shadow-md mt-2 transition-all duration-200"
+              >
+                View Submissions
+              </button>
+            </div>
           </div>
         ))}
       </div>
