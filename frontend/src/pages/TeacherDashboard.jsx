@@ -21,6 +21,8 @@ const TeacherDashboard = () => {
 
   const [exams, setExams] = useState([]);
   const [editingExam, setEditingExam] = useState(null);
+  const API_URL= import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,17 +31,18 @@ const TeacherDashboard = () => {
   const handleCreateOrUpdateExam = async (e) => {
     e.preventDefault();
     try {
-      let url = "http://localhost:5000/api/teacher/exams";
+      let url = `${API_URL}/api/teacher/exams`;
       let method = "POST";
       if (editingExam) {
         url += `/${editingExam._id}`;
         method = "PUT";
       }
 
-      // Convert date to ISO at midnight local time
       const payload = {
         ...formData,
-        date: formData.date ? new Date(formData.date + "T00:00:00").toISOString() : null,
+        date: formData.date
+          ? new Date(formData.date + "T00:00:00").toISOString()
+          : null,
       };
 
       const res = await fetch(url, {
@@ -72,11 +75,12 @@ const TeacherDashboard = () => {
       });
     } catch (err) {
       console.error("Error saving exam:", err);
+      alert(err.message || "Failed to save exam");
     }
   };
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/teacher/exams", {
+    fetch(`${API_URL}/api/teacher/exams`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     })
       .then((res) => res.json())
@@ -91,8 +95,9 @@ const TeacherDashboard = () => {
 
   const handleEditClick = (exam) => {
     setEditingExam(exam);
-    // Convert stored ISO date to YYYY-MM-DD for input
-    const localDate = exam.date ? new Date(exam.date).toISOString().split("T")[0] : "";
+    const localDate = exam.date
+      ? new Date(exam.date).toISOString().split("T")[0]
+      : "";
     setFormData({
       examName: exam.examName,
       className: exam.className,
@@ -103,9 +108,10 @@ const TeacherDashboard = () => {
   };
 
   const handleDeleteExam = async (examId) => {
+    if (!window.confirm("Are you sure you want to delete this exam?")) return;
     try {
       const res = await fetch(
-        `http://localhost:5000/api/teacher/exams/${examId}`,
+        `${API_URL}/api/teacher/exams/${examId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -115,6 +121,7 @@ const TeacherDashboard = () => {
       setExams((prev) => prev.filter((e) => e._id !== examId));
     } catch (err) {
       console.error(err);
+      alert(err.message || "Failed to delete exam");
     }
   };
 
@@ -127,7 +134,7 @@ const TeacherDashboard = () => {
     if (!studentIdInput) return;
     try {
       const res = await fetch(
-        `http://localhost:5000/api/users/${studentIdInput}`,
+        `${API_URL}/api/users/${studentIdInput}`,
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       if (!res.ok) throw new Error("Student not found");
@@ -146,7 +153,7 @@ const TeacherDashboard = () => {
     try {
       setAssignLoading(true);
       const res = await fetch(
-        `http://localhost:5000/api/teacherQuestions/exams/${examId}/assign-student`,
+        `${API_URL}/api/teacherQuestions/exams/${examId}/assign-student`,
         {
           method: "POST",
           headers: {
@@ -172,11 +179,12 @@ const TeacherDashboard = () => {
 
   return (
     <div className="p-6 space-y-6 bg-gradient-to-b from-gray-50 via-gray-100 to-gray-200 min-h-screen">
-
       {/* Welcome Section */}
       <div className="bg-white/95 shadow-lg rounded-lg p-6 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">Welcome, {user?.name}</h2>
+          <h2 className="text-3xl font-bold text-gray-800">
+            Welcome, {user?.name}
+          </h2>
           <p className="text-gray-600 text-lg">Your User ID: {user?.userId}</p>
         </div>
         <button
@@ -189,7 +197,10 @@ const TeacherDashboard = () => {
 
       {/* Exam Form */}
       <div className="bg-white/95 shadow-lg rounded-lg p-6">
-        <form onSubmit={handleCreateOrUpdateExam} className="grid gap-4 md:grid-cols-2">
+        <form
+          onSubmit={handleCreateOrUpdateExam}
+          className="grid gap-4 md:grid-cols-2"
+        >
           <input
             type="text"
             name="examName"
@@ -208,7 +219,9 @@ const TeacherDashboard = () => {
           >
             <option value="">Select Class</option>
             {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1}>{i + 1}</option>
+              <option key={i + 1} value={i + 1}>
+                {i + 1}
+              </option>
             ))}
           </select>
           <input
@@ -257,7 +270,9 @@ const TeacherDashboard = () => {
               {exam.examName} - Class {exam.className}
             </h3>
             <p className="text-gray-600">Topic: {exam.topic}</p>
-            <p className="text-gray-600">Date: {new Date(exam.date).toLocaleDateString()}</p>
+            <p className="text-gray-600">
+              Date: {new Date(exam.date).toLocaleDateString()}
+            </p>
             <p className="text-gray-600">Duration: {exam.duration} minutes</p>
 
             <div className="flex flex-wrap gap-2 mt-3">
@@ -307,7 +322,9 @@ const TeacherDashboard = () => {
 
                   {studentDetails && (
                     <div className="mt-2 p-3 border rounded-lg bg-white shadow-md flex flex-col gap-2">
-                      <p className="font-medium text-gray-800">Name: {studentDetails.name}</p>
+                      <p className="font-medium text-gray-800">
+                        Name: {studentDetails.name}
+                      </p>
                       <p className="text-gray-600">
                         Class: {studentDetails.className || studentDetails.class}
                       </p>

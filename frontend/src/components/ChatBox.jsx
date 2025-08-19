@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_URL= import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const ChatBox = ({ type, onClose }) => {
   const [messages, setMessages] = useState([
     {
@@ -79,7 +81,7 @@ const ChatBox = ({ type, onClose }) => {
             setFormData((prev) => ({ ...prev, email: reply }));
             try {
               setLoading(true);
-              const res = await fetch("http://localhost:5000/api/auth/send-otp", {
+              const res = await fetch(`${API_URL}/api/auth/send-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: reply }),
@@ -103,7 +105,7 @@ const ChatBox = ({ type, onClose }) => {
           // OTP
           try {
             setLoading(true);
-            const res = await fetch("http://localhost:5000/api/auth/verify-otp", {
+            const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email: formData.email, otp: reply }),
@@ -130,11 +132,10 @@ const ChatBox = ({ type, onClose }) => {
 
         case 4: {
           // Class (for students)
-          const classNum = parseInt(reply || "", 10);
+          const classNum = parseInt(formData.className || "", 10);
           if (!classNum || classNum < 1 || classNum > 12) {
             addMessage("Please select a valid class between 1 and 12.", "bot");
           } else {
-            setFormData((prev) => ({ ...prev, className: classNum }));
             addMessage("Now enter your desired password:", "bot");
             setStep(5);
           }
@@ -148,7 +149,7 @@ const ChatBox = ({ type, onClose }) => {
             const finalData = { ...formData, password: reply, role };
             try {
               setLoading(true);
-              const res = await fetch("http://localhost:5000/api/auth/register", {
+              const res = await fetch(`${API_URL}/api/auth/register`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(finalData),
@@ -188,7 +189,7 @@ const ChatBox = ({ type, onClose }) => {
           else {
             try {
               setLoading(true);
-              const res = await fetch("http://localhost:5000/api/auth/login", {
+              const res = await fetch(`${API_URL}/api/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...formData, password: reply }),

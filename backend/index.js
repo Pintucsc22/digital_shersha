@@ -1,3 +1,6 @@
+
+const os = require('os');
+
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -38,4 +41,18 @@ app.use('/api', leaderboardRoutes); // Use leaderboard routes
 // app.use('/api/student/questions', require('./routes/studentQuestionsRoutes'));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, '0.0.0.0', () => {
+  const interfaces = os.networkInterfaces();
+  let addresses = [];
+  for (let name in interfaces) {
+    for (let iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        addresses.push(iface.address);
+      }
+    }
+  }
+  console.log(`Server running:`);
+  console.log(`- Local: http://localhost:${PORT}`);
+  addresses.forEach(ip => console.log(`- Network: http://${ip}:${PORT}`));
+});

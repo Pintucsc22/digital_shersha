@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
 const McqQuestionManager = ({ examId: propExamId }) => {
+  const API_URL= import.meta.env.VITE_API_URL || "http://localhost:5000";
   const params = useParams();
   const examId = propExamId || params.examId;
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ const McqQuestionManager = ({ examId: propExamId }) => {
     correctOption: "",
   });
 
-  const API_BASE = "http://localhost:5000/api/mcq";
+  const API_BASE = `${API_URL}/api/mcq`;
   const optionLetters = ["A", "B", "C", "D"];
 
   useEffect(() => {

@@ -16,7 +16,22 @@ const getAvailableExams = async (req, res) => {
       'assignedTo.isActive': true
     }).populate('teacher', 'name email');
 
-    res.json(exams);
+    // Map exams to include remainingAttempts
+    const examsWithAttempts = exams.map((exam) => {
+      const assigned = exam.assignedTo.find(
+        (a) => a.studentId.toString() === student._id.toString()
+      );
+
+      const attemptsDone = assigned?.attempts || 0;
+      const remainingAttempts = Math.max(0, 3 - attemptsDone);
+
+      return {
+        ...exam.toObject(),
+        remainingAttempts
+      };
+    });
+
+    res.json(examsWithAttempts);
   } catch (error) {
     console.error('[ERROR] getAvailableExams:', error);
     res.status(500).json({ message: 'Error fetching exams' });

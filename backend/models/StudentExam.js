@@ -5,7 +5,7 @@ const studentExamSchema = new mongoose.Schema({
   exam: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true },
   answers: { type: Map, of: Number, required: true }, // { questionId: selectedOptionIndex }
   score: { type: Number, default: 0 },
-  total: { type: Number, default: 0 }, // ✅ total number of questions
+  total: { type: Number, default: 0 }, // total number of questions
   submittedAt: { type: Date, default: Date.now },
 
   // ✅ New Fields
@@ -15,7 +15,11 @@ const studentExamSchema = new mongoose.Schema({
     type: String, 
     enum: ["assigned", "submitted", "reviewed"], 
     default: "assigned" 
-  } // To track flow
+  }, // To track flow
+
+  // ✅ Track multiple attempts
+  attemptNumber: { type: Number, default: 1 }, // Current attempt
+  submitted: { type: Boolean, default: false }  // Flag if this attempt is submitted
 });
 
 module.exports = mongoose.model('StudentExam', studentExamSchema);

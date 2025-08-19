@@ -5,13 +5,14 @@ const TeacherExamControlSubmission = () => {
   const { id: examId } = useParams();
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   // Fetch submissions for this exam
   const fetchSubmissions = async () => {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:5000/api/teacher/exams/${examId}/submissions`,
+        `${API_URL}/api/teacher/exams/${examId}/submissions`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -20,6 +21,16 @@ const TeacherExamControlSubmission = () => {
       );
       if (!res.ok) throw new Error("Failed to load submissions");
       const data = await res.json();
+
+      // Count attempts per student
+      const attemptMap = {};
+      data.forEach((sub) => {
+        const id = sub.student?._id || sub.studentId;
+        if (!attemptMap[id]) attemptMap[id] = 0;
+        attemptMap[id]++;
+        sub.attemptNumber = attemptMap[id];
+      });
+
       // Sort: submitted first
       data.sort((a, b) => (b.submittedAt ? 1 : 0) - (a.submittedAt ? 1 : 0));
       setSubmissions(data);
@@ -40,7 +51,7 @@ const TeacherExamControlSubmission = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/teacher/exams/submissions/${submissionId}/publish`,
+        `${API_URL}/api/teacher/exams/submissions/${submissionId}/publish`,
         {
           method: "PATCH",
           headers: {
@@ -53,9 +64,9 @@ const TeacherExamControlSubmission = () => {
       if (!res.ok) throw new Error("Failed to update publish status");
 
       // Update local state instead of refetching all
-      setSubmissions(prev =>
-        prev.map(s =>
-          s._id === submissionId ? { ...s, resultPublished: !current } : s
+      setSubmissions((prev) =>
+        prev.map((s) =>
+          s._id === submissionId ? { ...s, isPublished: !current } : s
         )
       );
     } catch (err) {
@@ -87,6 +98,7 @@ const TeacherExamControlSubmission = () => {
             <thead>
               <tr className="bg-gray-100">
                 <th className="border p-2 text-left">Student Name</th>
+                <th className="border p-2 text-left">Attempt</th>
                 <th className="border p-2 text-left">Submitted At</th>
                 <th className="border p-2 text-left">Score</th>
                 <th className="border p-2 text-left">Result Published</th>
@@ -94,9 +106,10 @@ const TeacherExamControlSubmission = () => {
               </tr>
             </thead>
             <tbody>
-              {submissions.map(s => (
+              {submissions.map((s) => (
                 <tr key={s._id} className={s.submittedAt ? "" : "bg-gray-50"}>
                   <td className="border p-2">{s.student?.name || "Unknown"}</td>
+                  <td className="border p-2">{s.attemptNumber}</td>
                   <td className="border p-2">
                     {s.submittedAt
                       ? new Date(s.submittedAt).toLocaleString()
@@ -106,25 +119,23 @@ const TeacherExamControlSubmission = () => {
                   <td className="border p-2">
                     <span
                       className={`px-2 py-1 rounded text-white text-xs ${
-                        s.resultPublished ? "bg-green-500" : "bg-gray-400"
+                        s.isPublished ? "bg-green-500" : "bg-gray-400"
                       }`}
                     >
-                      {s.resultPublished ? "Published" : "Pending"}
+                      {s.isPublished ? "Published" : "Pending"}
                     </span>
                   </td>
                   <td className="border p-2">
                     {s.submittedAt && (
                       <button
-                        onClick={() =>
-                          handlePublishToggle(s._id, s.resultPublished)
-                        }
+                        onClick={() => handlePublishToggle(s._id, s.isPublished)}
                         className={`px-3 py-1 rounded text-white text-sm ${
-                          s.resultPublished
+                          s.isPublished
                             ? "bg-red-500 hover:bg-red-600"
                             : "bg-green-500 hover:bg-green-600"
                         }`}
                       >
-                        {s.resultPublished ? "Unpublish" : "Publish"}
+                        {s.isPublished ? "Unpublish" : "Publish"}
                       </button>
                     )}
                   </td>
