@@ -10,16 +10,15 @@ const StudentDashboard = () => {
   const [results, setResults] = useState([]);
   const [loadingExams, setLoadingExams] = useState(true);
   const [loadingResults, setLoadingResults] = useState(true);
-  const API_URL= import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const [error, setError] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   // -------------------------
   // Check login
   // -------------------------
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
-    console.log("Checking stored user:", storedUser);
     if (!storedUser || storedUser.role !== "student") {
-      console.warn("User not logged in or not student. Redirecting...");
       navigate("/?auth=login");
     } else {
       setStudent(storedUser);
@@ -32,46 +31,49 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchExams = async () => {
       const token = localStorage.getItem("token");
-      console.log("Fetching exams with token:", token);
+      if (!token) return navigate("/?auth=login");
+
       try {
         const res = await fetch(`${API_URL}/api/student/exams`, {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         });
-        console.log("Exams fetch status:", res.status);
+
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
+
         if (!res.ok) throw new Error("Failed to fetch exams");
 
         const data = await res.json();
-        console.log("Exams fetched:", data);
 
         const mappedExams = data.map((exam) => {
           const assigned = exam.assignedTo?.find(
             (a) => a.studentId?._id?.toString() === student._id
           );
 
-          const attempts = assigned?.attempts ?? 0;
-          const submitted = assigned?.submitted ?? false;
-          const isActive = assigned?.isActive ?? false;
-          const isAssigned = !!assigned;
-
-          console.log(`Exam ${exam.examName}:`, { attempts, submitted, isActive, isAssigned });
-
           return {
             ...exam,
-            studentProgress: { attempts, submitted, isActive, isAssigned },
+            studentProgress: {
+              attempts: assigned?.attempts ?? 0,
+              submitted: assigned?.submitted ?? false,
+              isActive: assigned?.isActive ?? false,
+              isAssigned: !!assigned,
+            },
           };
         });
 
         setAvailableExams(mappedExams);
       } catch (err) {
-        console.error("Error fetching exams:", err);
+        setError("Could not load exams. Please try again later.", err);
       } finally {
         setLoadingExams(false);
       }
     };
 
     if (student) fetchExams();
-  }, [student]);
+  }, [student, API_URL, navigate]);
 
   // -------------------------
   // Fetch results
@@ -79,27 +81,32 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchResults = async () => {
       const token = localStorage.getItem("token");
-      console.log("Fetching results with token:", token);
+      if (!token) return navigate("/?auth=login");
+
       try {
         const res = await fetch(`${API_URL}/api/student/results`, {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         });
-        console.log("Results fetch status:", res.status);
+
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
+
         if (!res.ok) throw new Error("Failed to fetch results");
 
         const data = await res.json();
-        console.log("Results fetched:", data);
         setResults(data);
       } catch (err) {
-        console.error("Error fetching results:", err);
+        setError("Could not load results. Please try again later.", err);
       } finally {
         setLoadingResults(false);
       }
     };
 
     if (student) fetchResults();
-  }, [student]);
+  }, [student, API_URL, navigate]);
 
   // -------------------------
   // Determine button / badge status
@@ -109,8 +116,6 @@ const StudentDashboard = () => {
     const today = dayjs().startOf("day");
     const examDay = dayjs(exam.date).startOf("day");
     const unlocked = !examDay.isAfter(today);
-
-    console.log(`Exam status for ${exam.examName}:`, progress, "Unlocked:", unlocked);
 
     if (!progress.isAssigned) {
       return { type: "badge", text: "Not Assigned", style: "bg-yellow-100 text-yellow-800" };
@@ -132,41 +137,38 @@ const StudentDashboard = () => {
   // -------------------------
   const handleStartExam = async (examId) => {
     const token = localStorage.getItem("token");
-    console.log("Attempting to start exam:", examId);
+    if (!token) return navigate("/?auth=login");
 
     try {
       const res = await fetch(`${API_URL}/api/student/exam/${examId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store", // always fetch fresh
+        cache: "no-store",
       });
 
-      console.log("Start exam fetch status:", res.status);
+      if (res.status === 401) {
+        handleLogout();
+        return;
+      }
 
       if (!res.ok) {
-        console.warn("Cannot start exam:", res.statusText);
-        alert("Cannot start exam: " + res.statusText);
+        alert("Cannot start exam.");
         return;
       }
 
       const examData = await res.json();
-      console.log("Exam data received:", examData);
 
       if (!examData.isActive) {
-        console.warn("Exam is not active");
         alert("Cannot start exam: Exam is not active.");
         return;
       }
 
       if (examData.remainingAttempts <= 0) {
-        console.warn("Maximum attempts reached");
         alert("Cannot start exam: Maximum attempts reached.");
         return;
       }
 
-      console.log("Navigating to exam page with exam data:", `/student/exam/${examId}`);
-      navigate(`/student/exam/${examId}`, { state: { examData } }); // <-- pass examData
-    } catch (err) {
-      console.error("Error starting exam:", err);
+      navigate(`/student/exam/${examId}`, { state: { examData } });
+    } catch {
       alert("Something went wrong. Try again.");
     }
   };
@@ -175,7 +177,6 @@ const StudentDashboard = () => {
   // Logout
   // -------------------------
   const handleLogout = () => {
-    console.log("Logging out student");
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     navigate("/");
@@ -201,6 +202,12 @@ const StudentDashboard = () => {
         </button>
       </div>
 
+      {error && (
+        <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-center">
+          {error}
+        </div>
+      )}
+
       {/* Main Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Available Exams */}
@@ -209,7 +216,7 @@ const StudentDashboard = () => {
             📘 Available Exams
           </h2>
           {loadingExams ? (
-            <p className="text-gray-500">Loading exams...</p>
+            <p className="text-gray-500 animate-pulse">Loading exams...</p>
           ) : availableExams.length > 0 ? (
             <ul className="space-y-3">
               {availableExams.map((exam) => {
@@ -238,6 +245,7 @@ const StudentDashboard = () => {
                       <button
                         onClick={() => handleStartExam(exam._id)}
                         disabled={status.disabled}
+                        aria-label={`Start exam ${exam.examName}`}
                         className={`mt-2 md:mt-0 w-full md:w-auto px-4 py-1 rounded-lg text-sm font-medium shadow transition ${status.style}`}
                       >
                         {status.text}
@@ -258,7 +266,7 @@ const StudentDashboard = () => {
             📊 My Results
           </h2>
           {loadingResults ? (
-            <p className="text-gray-500">Loading results...</p>
+            <p className="text-gray-500 animate-pulse">Loading results...</p>
           ) : results.length > 0 ? (
             <ul className="space-y-3">
               {results.map((r) => {

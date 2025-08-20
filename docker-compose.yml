@@ -14,10 +14,10 @@ services:
     container_name: exam-backend
     restart: always
     ports:
-      - "5000:5000"
+      - "5000:5000"   # internal only
     environment:
       - NODE_ENV=production
-      - MONGO_URI=mongodb://exam-mongo:27017/examdb
+      - MONGO_URI=mongodb://mongo:27017/examdb
       - JWT_SECRET=supersecretkey
     depends_on:
       - mongo
@@ -27,7 +27,7 @@ services:
     container_name: exam-frontend
     restart: always
     ports:
-      - "3000:80"
+      - "3000:80"   # publicly accessible
     depends_on:
       - backend
 
