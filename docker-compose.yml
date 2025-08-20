@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  mongo:
+    image: mongo:latest
+    container_name: exam-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build: ./backend
+    container_name: exam-backend
+    restart: always
+    ports:
+      - "5000:5000"   # internal only
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/examdb
+      - JWT_SECRET=supersecretkey
+    depends_on:
+      - mongo
+
+  frontend:
+    build: ./frontend
+    container_name: exam-frontend
+    restart: always
+    ports:
+      - "3000:80"   # publicly accessible
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:

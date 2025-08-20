@@ -1,7 +1,7 @@
 // src/pages/StudentDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import dayjs from "dayjs"; // ✅ DayJS for date comparison
+import dayjs from "dayjs";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -10,8 +10,12 @@ const StudentDashboard = () => {
   const [results, setResults] = useState([]);
   const [loadingExams, setLoadingExams] = useState(true);
   const [loadingResults, setLoadingResults] = useState(true);
+  const [error, setError] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+  // -------------------------
   // Check login
+  // -------------------------
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (!storedUser || storedUser.role !== "student") {
@@ -21,66 +25,157 @@ const StudentDashboard = () => {
     }
   }, [navigate]);
 
+  // -------------------------
   // Fetch exams
+  // -------------------------
   useEffect(() => {
     const fetchExams = async () => {
       const token = localStorage.getItem("token");
+      if (!token) return navigate("/?auth=login");
+
       try {
-        const res = await fetch("http://localhost:5000/api/student/exams", {
+        const res = await fetch(`${API_URL}/api/student/exams`, {
           headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
         });
+
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
+
         if (!res.ok) throw new Error("Failed to fetch exams");
+
         const data = await res.json();
-        setAvailableExams(data);
+
+        const mappedExams = data.map((exam) => {
+          const assigned = exam.assignedTo?.find(
+            (a) => a.studentId?._id?.toString() === student._id
+          );
+
+          return {
+            ...exam,
+            studentProgress: {
+              attempts: assigned?.attempts ?? 0,
+              submitted: assigned?.submitted ?? false,
+              isActive: assigned?.isActive ?? false,
+              isAssigned: !!assigned,
+            },
+          };
+        });
+
+        setAvailableExams(mappedExams);
       } catch (err) {
-        console.error("❌ Error fetching exams:", err);
+        setError("Could not load exams. Please try again later.", err);
       } finally {
         setLoadingExams(false);
       }
     };
-    if (student) fetchExams();
-  }, [student]);
 
+    if (student) fetchExams();
+  }, [student, API_URL, navigate]);
+
+  // -------------------------
   // Fetch results
+  // -------------------------
   useEffect(() => {
     const fetchResults = async () => {
       const token = localStorage.getItem("token");
+      if (!token) return navigate("/?auth=login");
+
       try {
-        const res = await fetch("http://localhost:5000/api/student/results", {
+        const res = await fetch(`${API_URL}/api/student/results`, {
           headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
         });
+
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
+
         if (!res.ok) throw new Error("Failed to fetch results");
+
         const data = await res.json();
         setResults(data);
       } catch (err) {
-        console.error("❌ Error fetching results:", err);
+        setError("Could not load results. Please try again later.", err);
       } finally {
         setLoadingResults(false);
       }
     };
+
     if (student) fetchResults();
-  }, [student]);
+  }, [student, API_URL, navigate]);
 
-  // Check if exam already submitted
-  const isExamSubmitted = (exam) => {
-    const localSubmitted = localStorage.getItem(`exam-${exam._id}-submitted`);
-    if (localSubmitted === "true") return true;
+  // -------------------------
+  // Determine button / badge status
+  // -------------------------
+  const getExamStatus = (exam) => {
+    const progress = exam.studentProgress || {};
+    const today = dayjs().startOf("day");
+    const examDay = dayjs(exam.date).startOf("day");
+    const unlocked = !examDay.isAfter(today);
 
-    const result = results.find((r) =>
-      [r.examId, r.exam?._id, r.exam]
-        .filter(Boolean)
-        .some((id) => String(id) === String(exam._id))
-    );
-    return !!(result && (result.score !== undefined && result.score !== null));
+    if (!progress.isAssigned) {
+      return { type: "badge", text: "Not Assigned", style: "bg-yellow-100 text-yellow-800" };
+    }
+    if (!progress.isActive) {
+      return { type: "button", disabled: true, text: "🔒 Locked by Teacher", style: "bg-gray-300 text-gray-500 cursor-not-allowed" };
+    }
+    if (!unlocked) {
+      return { type: "button", disabled: true, text: "🔒 Locked (Not Started)", style: "bg-gray-300 text-gray-500 cursor-not-allowed" };
+    }
+    if (progress.submitted) {
+      return { type: "badge", text: "Submitted", style: "bg-green-100 text-green-700" };
+    }
+    return { type: "button", disabled: false, text: "Start", style: "bg-blue-500 hover:bg-blue-600 text-white" };
   };
 
-  // ✅ Lock only future exams (use creation date for unlock)
-  const isExamUnlocked = (exam) => {
-    const today = dayjs().startOf("day");             // Today at 00:00
-    const examDay = dayjs(exam.date).startOf("day");  // creation date
-    return !examDay.isAfter(today);                   // Unlock if created on/before today
+  // -------------------------
+  // Start exam handler
+  // -------------------------
+  const handleStartExam = async (examId) => {
+    const token = localStorage.getItem("token");
+    if (!token) return navigate("/?auth=login");
+
+    try {
+      const res = await fetch(`${API_URL}/api/student/exam/${examId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+
+      if (res.status === 401) {
+        handleLogout();
+        return;
+      }
+
+      if (!res.ok) {
+        alert("Cannot start exam.");
+        return;
+      }
+
+      const examData = await res.json();
+
+      if (!examData.isActive) {
+        alert("Cannot start exam: Exam is not active.");
+        return;
+      }
+
+      if (examData.remainingAttempts <= 0) {
+        alert("Cannot start exam: Maximum attempts reached.");
+        return;
+      }
+
+      navigate(`/student/exam/${examId}`, { state: { examData } });
+    } catch {
+      alert("Something went wrong. Try again.");
+    }
   };
 
+  // -------------------------
+  // Logout
+  // -------------------------
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -107,6 +202,12 @@ const StudentDashboard = () => {
         </button>
       </div>
 
+      {error && (
+        <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-center">
+          {error}
+        </div>
+      )}
+
       {/* Main Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Available Exams */}
@@ -115,40 +216,39 @@ const StudentDashboard = () => {
             📘 Available Exams
           </h2>
           {loadingExams ? (
-            <p className="text-gray-500">Loading exams...</p>
+            <p className="text-gray-500 animate-pulse">Loading exams...</p>
           ) : availableExams.length > 0 ? (
             <ul className="space-y-3">
               {availableExams.map((exam) => {
-                const submitted = isExamSubmitted(exam);
-                const unlocked = isExamUnlocked(exam);
-
+                const status = getExamStatus(exam);
                 return (
                   <li
                     key={exam._id}
                     className="flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 p-3 rounded-xl shadow-sm hover:shadow-md transition"
                   >
-                    <span className="text-sm md:text-base text-gray-700 font-medium">
-                      {exam.examName}{" "}
-                      <span className="text-gray-500 text-xs md:text-sm">
-                        ({dayjs(exam.date).format("YYYY-MM-DD")})
+                    <div>
+                      <span className="text-sm md:text-base text-gray-700 font-medium">
+                        {exam.examName}{" "}
+                        <span className="text-gray-500 text-xs md:text-sm">
+                          ({dayjs(exam.date).format("YYYY-MM-DD")})
+                        </span>
                       </span>
-                    </span>
+                    </div>
 
-                    {submitted ? (
-                      <span className="mt-2 md:mt-0 inline-block bg-green-100 text-green-700 px-3 py-1 rounded-lg text-sm font-medium shadow">
-                        ✅ Submitted
+                    {status.type === "badge" ? (
+                      <span
+                        className={`mt-2 md:mt-0 inline-block px-3 py-1 rounded-lg text-sm font-medium shadow ${status.style}`}
+                      >
+                        {status.text}
                       </span>
                     ) : (
                       <button
-                        onClick={() => navigate(`/student/exam/${exam._id}`)}
-                        disabled={!unlocked}
-                        className={`mt-2 md:mt-0 w-full md:w-auto px-4 py-1 rounded-lg text-sm font-medium shadow transition ${
-                          unlocked
-                            ? "bg-blue-500 hover:bg-blue-600 text-white"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        }`}
+                        onClick={() => handleStartExam(exam._id)}
+                        disabled={status.disabled}
+                        aria-label={`Start exam ${exam.examName}`}
+                        className={`mt-2 md:mt-0 w-full md:w-auto px-4 py-1 rounded-lg text-sm font-medium shadow transition ${status.style}`}
                       >
-                        {unlocked ? "Start" : "🔒 Locked"}
+                        {status.text}
                       </button>
                     )}
                   </li>
@@ -156,9 +256,7 @@ const StudentDashboard = () => {
               })}
             </ul>
           ) : (
-            <p className="text-gray-500 text-sm">
-              No exams available right now.
-            </p>
+            <p className="text-gray-500 text-sm">No exams available right now.</p>
           )}
         </div>
 
@@ -168,7 +266,7 @@ const StudentDashboard = () => {
             📊 My Results
           </h2>
           {loadingResults ? (
-            <p className="text-gray-500">Loading results...</p>
+            <p className="text-gray-500 animate-pulse">Loading results...</p>
           ) : results.length > 0 ? (
             <ul className="space-y-3">
               {results.map((r) => {
@@ -186,9 +284,7 @@ const StudentDashboard = () => {
                     </span>
                     <span
                       className={`mt-2 md:mt-0 font-bold px-3 py-1 rounded-lg text-sm shadow ${
-                        pass
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-600"
+                        pass ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
                       }`}
                     >
                       Score: {r.score}/{r.total} — {pass ? "Pass" : "Fail"}

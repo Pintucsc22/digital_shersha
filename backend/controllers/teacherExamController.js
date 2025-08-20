@@ -5,6 +5,7 @@ const StudentExam = require('../models/StudentExam');
 // 📌 Create exam - only for teachers
 const createExam = async (req, res) => {
   try {
+    console.log('📌 createExam called by:', req.user.userId);
     if (req.user.role !== 'teacher') {
       return res.status(403).json({ message: 'Only teachers can create exams' });
     }
@@ -26,6 +27,7 @@ const createExam = async (req, res) => {
       teacher: teacherUser._id,
     });
 
+    console.log('✅ Exam created:', exam._id);
     res.status(201).json(exam);
   } catch (err) {
     console.error("❌ Exam creation failed:", err);
@@ -101,11 +103,13 @@ const deleteExam = async (req, res) => {
   }
 };
 
-// 📌 Assign student to exam
+// 📌 Assign student to exam - fresh StudentExam for reassignment
 const assignStudentToExam = async (req, res) => {
   try {
     const { examId } = req.params;
     const { studentId } = req.body;
+
+    console.log(`🔹 Assigning student ${studentId} to exam ${examId}`);
 
     const student = await User.findOne({ userId: studentId, role: 'student' });
     if (!student) return res.status(404).json({ message: 'Student not found' });
@@ -113,18 +117,41 @@ const assignStudentToExam = async (req, res) => {
     const exam = await Exam.findById(examId);
     if (!exam) return res.status(404).json({ message: 'Exam not found' });
 
-    const existing = exam.assignedTo.find(
+    // Handle assignment in Exam.assignedTo
+    let existing = exam.assignedTo.find(
       s => s.studentId.toString() === student._id.toString()
     );
 
     if (!existing) {
-      exam.assignedTo.push({ studentId: student._id, isActive: true, submitted: false });
+      existing = { studentId: student._id, isActive: true, submitted: false, attempts: 0 };
+      exam.assignedTo.push(existing);
+      console.log('✅ New assignment created:', existing);
     } else {
-      existing.isActive = true; // Reactivate if previously inactive
+      console.log('🔹 Existing assignment found:', existing);
+      existing.isActive = true;
+      existing.submitted = false;
+      existing.attempts = 0; // Reset attempts
+      console.log('🔹 Assignment reactivated and reset:', existing);
     }
 
     await exam.save();
-    res.json({ message: 'Student assigned and activated for exam', student });
+    console.log('✅ Exam saved with updated assignment');
+
+    // ✅ Remove old StudentExam and create fresh one
+    await StudentExam.deleteMany({ student: student._id, exam: exam._id });
+
+    const newStudentExam = await StudentExam.create({
+      student: student._id,
+      exam: exam._id,
+      answers: {},
+      submitted: false,
+      attempts: 0,
+      total: exam.questions.length,
+      status: 'assigned'
+    });
+    console.log('✅ Fresh StudentExam created:', newStudentExam._id);
+
+    res.json({ message: 'Student assigned with fresh exam', student });
   } catch (err) {
     console.error('❌ Error assigning student:', err);
     res.status(500).json({ message: 'Server error while assigning student' });
@@ -166,20 +193,17 @@ const publishSubmission = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to publish result' });
     }
 
-    // ✅ Calculate score if not done
-    if (!submission.score && submission.answers) {
+    if (submission.answers && (submission.score === undefined || submission.score === null)) {
       let score = 0;
       const examQuestions = submission.exam.questions || [];
       examQuestions.forEach(q => {
-        const ansIndex = submission.answers.get(q._id.toString());
-        if (ansIndex === q.correctAnswer) score++;
+        const ansIndex = submission.answers[q._id];
+        if (ansIndex !== undefined && Number(ansIndex) === q.correctAnswer) score++;
       });
       submission.score = score;
     }
 
-    // ✅ Set total questions
     submission.total = submission.exam.questions.length;
-
     submission.isPublished = true;
     submission.reviewedBy = teacherUser._id;
     submission.status = "reviewed";

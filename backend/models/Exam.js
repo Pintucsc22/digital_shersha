@@ -8,8 +8,8 @@ const questionSchema = new mongoose.Schema({
 
 const examSchema = new mongoose.Schema({
   examName: { type: String, required: true },
-  className: {type: String, required:true},
-  topic: {type:String, required:true},
+  className: { type: String, required: true },
+  topic: { type: String, required: true },
   date: { type: Date, required: true },
   duration: { type: String, required: true }, // in minutes
   subject: String,
@@ -20,7 +20,8 @@ const examSchema = new mongoose.Schema({
     {
       studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       isActive: { type: Boolean, default: false },
-      submitted: { type: Boolean, default: false }
+      submitted: { type: Boolean, default: false },
+      attempts: { type: Number, default: 0 }, // ✅ track attempts per student
     }
   ],
   teacher: {
