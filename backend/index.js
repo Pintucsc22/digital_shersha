@@ -21,7 +21,10 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'https://your-frontend.vercel.app',
+  credentials: true,
+}));
 app.use(express.json());
 app.use(helmet()); // secure HTTP headers
 
@@ -29,6 +32,8 @@ app.use(helmet()); // secure HTTP headers
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+app.set('trust proxy', 1); // trust first proxy
+
 
 // Rate limiting (protect against brute force)
 const limiter = rateLimit({
