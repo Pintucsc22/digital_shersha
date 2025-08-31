@@ -22,7 +22,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: 'https://your-frontend.vercel.app',
+  origin: 'https://digital-shersha.vercel.app',
   credentials: true,
 }));
 app.use(express.json());
