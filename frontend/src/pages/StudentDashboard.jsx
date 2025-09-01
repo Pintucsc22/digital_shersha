@@ -22,6 +22,10 @@ const StudentDashboard = () => {
       navigate("/?auth=login");
     } else {
       setStudent(storedUser);
+      // ensure they stay on student-dashboard
+      if (window.location.pathname === "/student") {
+        navigate("/student-dashboard");
+      }
     }
   }, [navigate]);
 
